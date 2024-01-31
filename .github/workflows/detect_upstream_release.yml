@@ -15,8 +15,6 @@ jobs:
 
           mine=`curl --silent https://api.github.com/repos/Clinale/OneLife/releases/latest | jq -r .tag_name | grep -o -P '(?<=v)\d*'`
           is_mismatch=$([ $jason = $mine ] && echo "false" || echo "true")
-          echo is_mismatch=$is_mismatch >> "$GITHUB_OUTPUT"
-          echo version=$jason >> "$GITHUB_OUTPUT"
           echo is_mismatch: $is_mismatch, version: $jason
       - name: call make_release
         if: steps.mismatch.outputs.is_mismatch == 'true'
