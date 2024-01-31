@@ -1,0 +1,29 @@
+name: Get latest release version
+
+on:
+  schedule:
+    - cron:  '30 * * * *'
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check version mismatch
+        id: mismatch
+        run: |
+          jason=`curl --silent https://raw.githubusercontent.com/twohoursonelife/OneLife/master/gameSource/game.cpp`
+          jason=`echo $jason | grep -o -P '(?<=int versionNumber = )[0-9]+'`
+
+          mine=`curl --silent https://api.github.com/repos/Clinale/OneLife/releases/latest | jq -r .tag_name | grep -o -P '(?<=v)\d*'`
+          is_mismatch=$([ $jason = $mine ] && echo "false" || echo "true")
+          echo is_mismatch=$is_mismatch >> "$GITHUB_OUTPUT"
+          echo version=$jason >> "$GITHUB_OUTPUT"
+          echo is_mismatch: $is_mismatch, version: $jason
+      - name: call make_release
+        if: steps.mismatch.outputs.is_mismatch == 'true'
+        run: |
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.PAT }}" \
+            https://api.github.com/repos/Clinale/OneLife/actions/workflows/make_release.yml/dispatches \
+            -d '{"ref":"master", "inputs": { "version":"${{ steps.mismatch.outputs.version }}" }}' 
