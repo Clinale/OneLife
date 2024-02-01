@@ -10,12 +10,24 @@ jobs:
       - name: check version mismatch
         id: mismatch
         run: |
-          jason=`curl --silent https://raw.githubusercontent.com/twohoursonelife/OneLife/master/gameSource/game.cpp`
-          jason=`echo $jason | grep -o -P '(?<=int versionNumber = )[0-9]+'`
+          jason=$(curl --silent -f https://raw.githubusercontent.com/twohoursonelife/OneLife/master/gameSource/game.cpp)
+          if [ $? -ne 0 ]; then echo "Failed to fetch game source version"; exit 1; fi
 
-          mine=`curl --silent https://api.github.com/repos/Clinale/OneLife/releases/latest | jq -r .tag_name | grep -o -P '(?<=v)\d*'`
-          is_mismatch=$([ $jason = $mine ] && echo "false" || echo "true")
-          echo is_mismatch: $is_mismatch, version: $jason
+          jason=$(echo "$jason" | grep -o -P '(?<=int versionNumber = )\d+')
+          if [ -z "$jason" ]; then echo "Failed to extract game source version"; exit 1; fi
+
+          mine=$(curl --silent -f https://api.github.com/repos/Clinale/OneLife/releases/latest | jq -r .tag_name)
+          if [ $? -ne 0 ]; then echo "Failed to fetch latest release version"; exit 1; fi
+
+          mine=$(echo "$mine" | grep -o -P '(?<=v)\d*')
+          if [ -z "$mine" ]; then echo "Failed to extract latest release version"; exit 1; fi
+
+          if [ "$jason" = "$mine" ]; then
+              is_mismatch="false"
+          else
+              is_mismatch="true"
+          fi
+          echo "is_mismatch: $is_mismatch, version: $jason"
       - name: call make_release
         if: steps.mismatch.outputs.is_mismatch == 'true'
         run: |
