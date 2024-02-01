@@ -17,10 +17,12 @@ jobs:
           if [ -z "$jason" ]; then echo "Failed to extract game source version"; exit 1; fi
 
           mine=$(curl --silent -f https://api.github.com/repos/Clinale/OneLife/releases/latest | jq -r .tag_name)
-          if [ $? -ne 0 ]; then echo "Failed to fetch latest release version"; exit 1; fi
-
-          mine=$(echo "$mine" | grep -o -P '(?<=v)\d*')
-          if [ -z "$mine" ]; then echo "Failed to extract latest release version"; exit 1; fi
+          if [ $? -ne 0 ]; then echo "Failed to fetch latest release version"; fi
+          
+          if [ -n "$mine" ]; then
+                  mine=$(echo "$mine" | grep -o -P '(?<=v)\d*')
+                  if [ -z "$mine" ]; then echo "Failed to extract latest release version"; exit 1; fi
+          fi
 
           if [ "$jason" = "$mine" ]; then
               is_mismatch="false"
