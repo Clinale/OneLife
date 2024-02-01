@@ -30,6 +30,8 @@ jobs:
               is_mismatch="true"
           fi
           echo "is_mismatch: $is_mismatch, version: $jason"
+          echo "::set-output name=is_mismatch::$is_mismatch"
+          echo "::set-output name=version::$jason"
       - name: call make_release
         if: steps.mismatch.outputs.is_mismatch == 'true'
         run: |
