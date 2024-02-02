@@ -18,7 +18,7 @@ jobs:
 
           mine=$(curl --silent -f https://api.github.com/repos/Clinale/OneLife/releases/latest | jq -r .tag_name)
           if [ $? -ne 0 ]; then echo "Failed to fetch latest release version"; fi
-          
+
           if [ -n "$mine" ]; then
                   mine=$(echo "$mine" | grep -o -P '(?<=v)\d*')
                   if [ -z "$mine" ]; then echo "Failed to extract latest release version"; exit 1; fi
@@ -30,12 +30,14 @@ jobs:
               is_mismatch="true"
           fi
           echo "is_mismatch: $is_mismatch, version: $jason"
+          echo "::set-output name=is_mismatch::$is_mismatch"
+          echo "::set-output name=version::$jason"
       - name: call make_release
         if: steps.mismatch.outputs.is_mismatch == 'true'
         run: |
           curl \
             -X POST \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.PAT }}" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/Clinale/OneLife/actions/workflows/make_release.yml/dispatches \
             -d '{"ref":"master", "inputs": { "version":"${{ steps.mismatch.outputs.version }}" }}' 
