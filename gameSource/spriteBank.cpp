@@ -80,6 +80,18 @@ void enableSpriteSearch( char inEnable ) {
 
 
 
+// skip all non-txt files (only read meta data files on init, 
+// not bulk data tga files)
+static char shouldFileBeCached( char *inFileName ) {
+    if( strstr( inFileName, ".txt" ) != NULL &&
+        strcmp( inFileName, "nextSpriteNumber.txt" ) != 0 &&
+        strcmp( inFileName, "nextSpriteNumberOffset.txt" ) != 0 ) {
+        return true;
+        }
+    return false;
+    }
+
+
 
 int initSpriteBankStart( char *outRebuildingCache ) {
     maxID = 0;
@@ -88,9 +100,19 @@ int initSpriteBankStart( char *outRebuildingCache ) {
     currentBinFile = 0;
     
     char rebuildingA, rebuildingB;
-    cache = initFolderCache( "sprites", &rebuildingA );
+    
 
     binCache = initBinFolderCache( "sprites", ".tga", &rebuildingB );
+
+    char forceRebuild = false;
+
+    if( rebuildingB ) {
+        forceRebuild = true;
+        }
+
+    cache = initFolderCache( "sprites", &rebuildingA, shouldFileBeCached,
+                             forceRebuild );
+    
 
     *outRebuildingCache = rebuildingA || rebuildingB;
     
@@ -281,10 +303,7 @@ float initSpriteBankStep() {
 
         char *fileName = getFileName( cache, i );
     
-        // skip all non-txt files (only read meta data files on init, 
-        // not bulk data tga files)
-        if( strstr( fileName, ".txt" ) != NULL &&
-            strcmp( fileName, "nextSpriteNumber.txt" ) != 0 ) {
+        if( shouldFileBeCached( fileName ) ) {
                             
             //printf( "Loading sprite from path %s\n", fileName );
 
@@ -447,25 +466,27 @@ float initSpriteBankStep() {
 
             if( spriteID > 0 ) {
                 
-                SpriteRecord *r = getSpriteRecord( spriteID );
-                
-                // there might be tga file that we have no .txt file, and thus
-                // no record, for
-                if( r != NULL ) {
-                    int contSize;
-                    unsigned char *contents = getFileContents( binCache, i,
-                                                               fileName, 
-                                                               &contSize );
-                    if( contents != NULL ) {
-                        
+                int contSize;
+                unsigned char *contents = getFileContents( binCache, i,
+                                                           fileName, 
+                                                           &contSize );
+                if( contents != NULL ) {
+                    
+                    // there might be tga file that we have no .txt file, 
+                    // and thus no record
+                    // Note that we still must read content for such a file,
+                    // because binCache must be read in order.
+                    SpriteRecord *r = getSpriteRecord( spriteID );
+                    
+                    if( r != NULL ) {
                         loadSpriteFromRawTGAData( 
                             spriteID, contents, contSize );
                     
                         r->numStepsUnused = 0;
                         loadedSprites.push_back( spriteID );
-                        
-                        delete [] contents;
                         }
+                    
+                    delete [] contents;
                     }
                 }
             }
@@ -993,6 +1014,7 @@ int addSprite( const char *inTag, SpriteHandle inSprite,
                 
                 
         int nextSpriteNumber = 1;
+        int nextSpriteNumberOffset = 0;
                 
         File *nextNumberFile = 
             spritesDir.getChildFile( "nextSpriteNumber.txt" );
@@ -1006,6 +1028,23 @@ int addSprite( const char *inTag, SpriteHandle inSprite,
                 sscanf( nextNumberString, "%d", &nextSpriteNumber );
                 
                 delete [] nextNumberString;
+                }
+            }
+            
+        File *nextNumberOffsetFile = 
+            spritesDir.getChildFile( "nextSpriteNumberOffset.txt" );
+                
+        if( nextNumberOffsetFile->exists() ) {
+                    
+            char *nextNumberOffsetString = 
+                nextNumberOffsetFile->readFileContents();
+
+            if( nextNumberOffsetString != NULL ) {
+                sscanf( nextNumberOffsetString, "%d", &nextSpriteNumberOffset );
+                
+                nextSpriteNumber += nextSpriteNumberOffset;
+                
+                delete [] nextNumberOffsetString;
                 }
             }
                 
@@ -1049,18 +1088,34 @@ int addSprite( const char *inTag, SpriteHandle inSprite,
         delete [] fileNameTXT;
         delete metaFile;
 
-        nextSpriteNumber++;
-        
+        if( nextSpriteNumberOffset > 0 ) {
+            nextSpriteNumberOffset++;
+            
 
-                
-        char *nextNumberString = autoSprintf( "%d", nextSpriteNumber );
-        
-        nextNumberFile->writeToFile( nextNumberString );
-        
-        delete [] nextNumberString;
-                
-        
-        delete nextNumberFile;
+                    
+            char *nextNumberOffsetString = autoSprintf( "%d", nextSpriteNumberOffset );
+            
+            nextNumberOffsetFile->writeToFile( nextNumberOffsetString );
+            
+            delete [] nextNumberOffsetString;
+                    
+            
+            delete nextNumberOffsetFile;
+            }
+        else {
+            nextSpriteNumber++;
+            
+
+                    
+            char *nextNumberString = autoSprintf( "%d", nextSpriteNumber );
+            
+            nextNumberFile->writeToFile( nextNumberString );
+            
+            delete [] nextNumberString;
+                    
+            
+            delete nextNumberFile;
+            }
         }
     
     if( newID == -1 ) {

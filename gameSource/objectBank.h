@@ -29,11 +29,10 @@ typedef struct TapoutRecord {
         int gridSpacingX, gridSpacingY;
         // how far to reach in +/- x and y when tapping out
         int limitX, limitY;
-        int buildCount;
-        int buildCountLimit;
-        // how far to reach in +/- x and y when tapping out
-        // after build count limit reached
-        int postBuildLimitX, postBuildLimitY;
+        // 2HOL - can set the max number of objects to be tapped out by one operation
+        int tapoutCountLimit;
+        // 2HOL - can specify coordinates to tap out
+        int specificX, specificY;
     } TapoutRecord;
 
 
@@ -415,6 +414,10 @@ typedef struct ObjectRecord {
         
         char noHighlight;
         
+        // tall objects can be clicked through to reach small objects behind
+        // this property disables that
+        char noClickThrough;
+        
         // for auto-orienting fences, walls, etc
         // all three objects know the IDs of all three objects
         int horizontalVersionID;
@@ -746,6 +749,8 @@ SimpleVector<int> *getAllPossibleDeathIDs();
 // does NOT included use dummies
 SimpleVector<int> *getAllPossibleFoodIDs();
 
+// NOT destroyed or modified by caller
+SimpleVector<int> *getAllPossibleNonPermanentIDs();
 
 
 
@@ -942,9 +947,6 @@ char canPickup( int inObjectID, double inPlayerAge );
 
 
 TapoutRecord *getTapoutRecord( int inObjectID );
-
-
-void clearTapoutCounts();
 
 
 

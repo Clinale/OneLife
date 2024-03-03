@@ -154,6 +154,8 @@ static int canYumChainBreak = 0;
 
 static double minAgeForCravings = 10;
 
+static int eatEverythingMode = 0;
+
 
 // static double posseSizeSpeedMultipliers[4] = { 0.75, 1.25, 1.5, 2.0 };
 
@@ -762,6 +764,25 @@ typedef struct LiveObject {
 
         char newMove;
         
+        // Absolute position used when generating last PU sent out about this
+        // player.
+        // If they are making a very long chained move, and their status
+        // isn't changing, they might not generate a PU message for a very
+        // long time.  This becomes a problem when them move out/in range
+        // of another player.  If their status (held item, etc) has changed
+        // while they are out of range, the other player won't see that
+        // status change when they come back in range (because the PU
+        // happened when they were out of range) and the long chained move
+        // isn't generating any PU messages now that they are back in range.
+        // Since modded clients might make very long MOVEs for each part
+        // of a MOVE chain (since they are zoomed out), we can't just count
+        // MOVE messages sent since the las PU message went out.
+        // We use this position to determine how far they've moved away
+        // from their last PU position, and send an intermediary PU if
+        // they get too far away
+        GridPos lastPlayerUpdateAbsolutePos;
+        
+
         // heat map that player carries around with them
         // every time they stop moving, it is updated to compute
         // their local temp
@@ -836,6 +857,10 @@ typedef struct LiveObject {
         // how many bonus from yummy food is stored
         // these are used first before food is decremented
         int yummyBonusStore;
+        
+        // last time we told player their capacity in a food update
+        // what did we tell them?
+        int lastReportedFoodCapacity;
         
 
         ClothingSet clothing;
@@ -921,6 +946,14 @@ typedef struct LiveObject {
         GridPos forceFlightDest;
         double forceFlightDestSetTime;
         
+
+        // don't send global messages too quickly
+        // give player chance to read each one
+        double lastGlobalMessageTime;
+        
+        SimpleVector<char*> globalMessageQueue;
+
+
     } LiveObject;
 
 
@@ -1036,6 +1069,16 @@ char isKnownOwned( LiveObject *inPlayer, int inX, int inY ) {
 char isKnownOwned( LiveObject *inPlayer, GridPos inPos ) {
     return isKnownOwned( inPlayer, inPos.x, inPos.y );
     }
+
+
+// messages with no follow-up hang out on client for 10 seconds
+// 7 seconds should be long enough to read if there's a follow-up waiting
+static double minGlobalMessageSpacingSeconds = 7;
+
+
+void sendGlobalMessage( char *inMessage,
+                        LiveObject *inOnePlayerOnly = NULL );
+
 
 void sendMessageToPlayer( LiveObject *inPlayer, 
                           char *inMessage, int inLength );
@@ -1750,7 +1793,9 @@ void quitCleanup() {
             delete [] nextPlayer->murderPerpEmail;
             }
 
-
+        nextPlayer->globalMessageQueue.deallocateStringElements();
+        
+        
         freePlayerContainedArrays( nextPlayer );
         
         
@@ -2154,6 +2199,13 @@ typedef struct ClientMessage {
 static int pathDeltaMax = 16;
 
 
+
+static int stringToInt( char *inString ) {
+    return strtol( inString, NULL, 10 );
+    }
+
+
+
 // if extraPos present in result, destroyed by caller
 // inMessage may be modified by this call
 ClientMessage parseMessage( LiveObject *inPlayer, char *inMessage ) {
@@ -2203,11 +2255,11 @@ ClientMessage parseMessage( LiveObject *inPlayer, char *inMessage ) {
                         }
                     break;
                 case 1:
-                    m.x = atoi( &( inMessage[i] ) );
+                    m.x = stringToInt( &( inMessage[i] ) );
                     numRead++;
                     break;
                 case 2:
-                    m.y = atoi( &( inMessage[i] ) );
+                    m.y = stringToInt( &( inMessage[i] ) );
                     numRead++;
                     break;
                 }
@@ -2271,7 +2323,8 @@ ClientMessage parseMessage( LiveObject *inPlayer, char *inMessage ) {
         
         if( atPos != NULL ) {
             // skip @ symbol in token and parse int
-            m.sequenceNumber = atoi( &( tokens->getElementDirect( 3 )[1] ) );
+            m.sequenceNumber = 
+                stringToInt( &( tokens->getElementDirect( 3 )[1] ) );
             }
 
         int numTokens = tokens->size();
@@ -2286,12 +2339,12 @@ ClientMessage parseMessage( LiveObject *inPlayer, char *inMessage ) {
             char *yToken = tokens->getElementDirect( offset + e * 2 + 1 );
             
             // profiler found sscanf is a bottleneck here
-            // try atoi instead
+            // try atoi (stringToInt) instead
             //sscanf( xToken, "%d", &( m.extraPos[e].x ) );
             //sscanf( yToken, "%d", &( m.extraPos[e].y ) );
 
-            m.extraPos[e].x = atoi( xToken );
-            m.extraPos[e].y = atoi( yToken );
+            m.extraPos[e].x = stringToInt( xToken );
+            m.extraPos[e].y = stringToInt( yToken );
             
             
             if( abs( m.extraPos[e].x ) > pathDeltaMax ||
@@ -4027,6 +4080,9 @@ GridPos getClosestPlayerPos( int inX, int inY ) {
         if( o->error ) {
             continue;
             }
+        if( o->heldByOther ) {
+            continue;
+            }
         
         GridPos p;
 
@@ -4117,8 +4173,11 @@ static void setPlayerDisconnected( LiveObject *inPlayer,
 
 
 // if inOnePlayerOnly set, we only send to that player
-static void sendGlobalMessage( char *inMessage,
-                               LiveObject *inOnePlayerOnly = NULL ) {
+void sendGlobalMessage( char *inMessage,
+                        LiveObject *inOnePlayerOnly ) {
+    
+    double curTime = Time::getCurrentTime();
+    
     char found;
     char *noSpaceMessage = replaceAll( inMessage, " ", "_", &found );
 
@@ -4136,13 +4195,26 @@ static void sendGlobalMessage( char *inMessage,
             }
 
         if( ! o->error && ! o->isTutorial && o->connected ) {
-            int numSent = 
-                o->sock->send( (unsigned char*)fullMessage, 
-                               len, 
-                               false, false );
-        
-            if( numSent != len ) {
-                setPlayerDisconnected( o, "Socket write failed" );
+
+
+            if( curTime - o->lastGlobalMessageTime > 
+                minGlobalMessageSpacingSeconds ) {
+                
+                int numSent = 
+                    o->sock->send( (unsigned char*)fullMessage, 
+                                   len, 
+                                   false, false );
+                
+                o->lastGlobalMessageTime = curTime;
+                
+                if( numSent != len ) {
+                    setPlayerDisconnected( o, "Socket write failed" );
+                    }
+                }
+            else {
+                // messages are coming too quickly for this player to read
+                // them, wait before sending this one
+                o->globalMessageQueue.push_back( stringDuplicate( inMessage ) );
                 }
             }
         }
@@ -4383,6 +4455,12 @@ int sendMapChunkMessage( LiveObject *inO,
             // remove top of bar
             horBarH = lastY - yd;
             }
+
+        if( horBarH > chunkDimensionY ) {
+            // don't allow bar to grow too big if we have a huge jump
+            // like from VOG mode
+            horBarH = chunkDimensionY;
+            }
         
 
         int vertBarStartX = fullStartX;
@@ -4399,6 +4477,14 @@ int sendMapChunkMessage( LiveObject *inO,
             // remove right part of bar
             vertBarW = lastX - xd;
             }
+        
+        
+        if( vertBarW > chunkDimensionX ) {
+            // don't allow bar to grow too big if we have a huge jump
+            // like from VOG mode
+            vertBarW = chunkDimensionX;
+            }
+        
         
         // now trim vert bar where it intersects with hor bar
         if( yd > lastY ) {
@@ -4974,7 +5060,11 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay, bool inPrivate =
     if( strcmp( inToSay, curseYouPhrase ) == 0 ) {
         isYouShortcut = true;
         }
-    if( strcmp( inToSay, curseBabyPhrase ) == 0 ) {
+    
+    if( strcmp( inToSay, curseBabyPhrase ) == 0
+        &&
+        SettingsManager::getIntSetting( "allowBabyCursing", 0 ) ) {
+        
         isBabyShortcut = true;
         }
     
@@ -5177,7 +5267,7 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay, bool inPrivate =
         if( isCurse ) {
             char *targetEmail = getCurseReceiverEmail( cursedName );
             if( targetEmail != NULL ) {
-                setDBCurse( inPlayer->email, targetEmail );
+                setDBCurse( inPlayer->id, inPlayer->email, targetEmail );
                 dbCurseTargetEmail = targetEmail;
                 }
             }
@@ -5197,7 +5287,7 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay, bool inPrivate =
             spendCurseToken( inPlayer->email ) ) {
             
             isCurse = true;
-            setDBCurse( inPlayer->email, youCursePlayer->email );
+            setDBCurse( inPlayer->id, inPlayer->email, youCursePlayer->email );
             dbCurseTargetEmail = youCursePlayer->email;
             }
         else if( isBabyShortcut && babyCursePlayer != NULL &&
@@ -5211,7 +5301,7 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay, bool inPrivate =
                 targetEmail = babyCursePlayer->origEmail;
                 }
             if( targetEmail != NULL ) {
-                setDBCurse( inPlayer->email, targetEmail );
+                setDBCurse( inPlayer->id, inPlayer->email, targetEmail );
                 dbCurseTargetEmail = targetEmail;
                 }
             }
@@ -5221,7 +5311,8 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay, bool inPrivate =
             
             isCurse = true;
             
-            setDBCurse( inPlayer->email, inPlayer->lastBabyEmail );
+            setDBCurse( inPlayer->id, 
+                        inPlayer->email, inPlayer->lastBabyEmail );
             dbCurseTargetEmail = inPlayer->lastBabyEmail;
             }
         }
@@ -6016,7 +6107,7 @@ static char isYummy( LiveObject *inPlayer, int inObjectID ) {
         o = getObject( inObjectID );
         }
 
-    if( o->foodValue == 0 ) {
+    if( o->foodValue == 0 && ! eatEverythingMode ) {
         return false;
         }
 
@@ -6046,7 +6137,7 @@ static char isReallyYummy( LiveObject *inPlayer, int inObjectID ) {
         o = getObject( inObjectID );
         }
 
-    if( o->foodValue == 0 ) {
+    if( o->foodValue == 0 && ! eatEverythingMode ) {
         return false;
         }
 
@@ -6235,6 +6326,9 @@ static UpdateRecord getUpdateRecord(
                                  inPlayer->posForced );
         r.absolutePosX = x;
         r.absolutePosY = y;
+
+        inPlayer->lastPlayerUpdateAbsolutePos.x = x;
+        inPlayer->lastPlayerUpdateAbsolutePos.y = y;
         }
     
     SimpleVector<char> clothingListBuffer;
@@ -6902,9 +6996,13 @@ int processLoggedInPlayer( char inAllowReconnect,
             o->firstMapSent = false;
             o->firstMessageSent = false;
             o->inFlight = false;
+
+            o->foodUpdate = true;
             
             o->connected = true;
             o->cravingKnown = false;
+            
+            o->curseTokenUpdate = true;
             
             if( o->heldByOther ) {
                 // they're held, so they may have moved far away from their
@@ -7017,6 +7115,11 @@ int processLoggedInPlayer( char inAllowReconnect,
     
     minAgeForCravings = SettingsManager::getDoubleSetting( "minAgeForCravings",
                                                            10 );
+    
+    eatEverythingMode = SettingsManager::getIntSetting( "eatEverythingMode", 0 );
+    
+    // change the setting from cravings
+    eatEverythingModeEnabled = eatEverythingMode;
     
 
     numConnections ++;
@@ -7397,9 +7500,8 @@ int processLoggedInPlayer( char inAllowReconnect,
     newObject.isIndoors = false;
     
 
-    newObject.foodDecrementETASeconds =
-        currentTime + 
-        computeFoodDecrementTimeSeconds( &newObject );
+    
+    
                 
     newObject.foodUpdate = true;
     newObject.lastAteID = 0;
@@ -7408,6 +7510,8 @@ int processLoggedInPlayer( char inAllowReconnect,
     newObject.justAteID = 0;
     
     newObject.yummyBonusStore = 0;
+
+    newObject.lastReportedFoodCapacity = 0;
 
     newObject.clothing = getEmptyClothingSet();
 
@@ -8063,6 +8167,10 @@ int processLoggedInPlayer( char inAllowReconnect,
     newObject.deathLogged = false;
     newObject.newMove = false;
     
+    newObject.lastPlayerUpdateAbsolutePos.x = 0;
+    newObject.lastPlayerUpdateAbsolutePos.y = 0;
+    
+
     newObject.posForced = false;
     newObject.waitingForForceResponse = false;
     
@@ -8154,6 +8262,11 @@ int processLoggedInPlayer( char inAllowReconnect,
             }
         }
 
+    newObject.foodDecrementETASeconds =
+        currentTime + 
+        computeFoodDecrementTimeSeconds( &newObject );
+
+        
     if( forceSpawn ) {
         newObject.forceSpawn = true;
         newObject.xs = forceSpawnInfo.pos.x;
@@ -8189,6 +8302,9 @@ int processLoggedInPlayer( char inAllowReconnect,
         delete [] forceSpawnInfo.firstName;
         delete [] forceSpawnInfo.lastName;
         }
+    
+
+    newObject.lastGlobalMessageTime = 0;
     
 
     newObject.birthPos.x = newObject.xd;
@@ -8333,6 +8449,7 @@ int processLoggedInPlayer( char inAllowReconnect,
               newObject.parentID,
               parentEmail,
               ! getFemale( &newObject ),
+              getObject( newObject.displayID )->race, 
               newObject.xd,
               newObject.yd,
               players.size(),
@@ -8802,54 +8919,77 @@ static char isContainmentWithMatchedTags( int inContainerID, int inContainedID )
         // not a limited containable object
         return false;
         }
+
+    char anyWithLimitNameFound = false;
     
-    char *limitNameLoc = &( contLoc[5] );
+    while( contLoc != NULL ) {
+        
     
-    if( limitNameLoc[0] != ' ' &&
-        limitNameLoc[0] != '\0' ) {
+        char *limitNameLoc = &( contLoc[5] );
+    
+        if( limitNameLoc[0] != ' ' &&
+            limitNameLoc[0] != '\0' ) {
 
-        // there's something after +cont
-        // scan the whole thing, including +cont
+            // there's something after +cont
+            // scan the whole thing, including +cont
+            
+            anyWithLimitNameFound = true;
 
-        char tag[100];
-        
-        int numRead = sscanf( contLoc, "%99s", tag );
-        
-        if( numRead == 1 ) {
+            char tag[100];
             
-            // clean up # character that might delimit end of string
-            int tagLen = strlen( tag );
+            int numRead = sscanf( contLoc, "%99s", tag );
             
-            for( int i=0; i<tagLen; i++ ) {
-                if( tag[i] == '#' ) {
-                    tag[i] = '\0';
-                    tagLen = i;
-                    break;
-                    }
-                }
-
-            char *locInContainerName =
-                strstr( getObject( inContainerID )->description, tag );
-            
-            if( locInContainerName != NULL ) {
-                // skip to end of tag
-                // and make sure tag isn't a sub-tag of container tag
-                // don't want contained to be +contHot
-                // and contaienr to be +contHotPlates
+            if( numRead == 1 ) {
                 
-                char end = locInContainerName[ tagLen ];
+                // clean up # character that might delimit end of string
+                int tagLen = strlen( tag );
                 
-                if( end == ' ' ||
-                    end == '\0'||
-                    end == '#' ) {
-                    return true;
+                for( int i=0; i<tagLen; i++ ) {
+                    if( tag[i] == '#' ) {
+                        tag[i] = '\0';
+                        tagLen = i;
+                        break;
+                        }
                     }
+                
+                char *locInContainerName =
+                    strstr( getObject( inContainerID )->description, tag );
+                
+                if( locInContainerName != NULL ) {
+                    // skip to end of tag
+                    // and make sure tag isn't a sub-tag of container tag
+                    // don't want contained to be +contHot
+                    // and contaienr to be +contHotPlates
+                    
+                    char end = locInContainerName[ tagLen ];
+                    
+                    if( end == ' ' ||
+                        end == '\0'||
+                        end == '#' ) {
+                        return true;
+                        }
+                    }
+                // no match with this container so far, 
+                // but we can keep trying other +cont tags
+                // in our contained object
                 }
-            return false;
             }
+        else {
+            // +cont with nothing after it, no limit based on this tag
+            }
+
+        // keep looking beyond last limit loc
+        contLoc = strstr( limitNameLoc, "+cont" );
+        }
+
+    if( anyWithLimitNameFound ) {
+        // item is limited to some types of container, and this
+        // container didn't match any of the limit names
+        return false;
         }
     
-    // +cont with nothing after it, no limit
+
+    // we get here if we found +cont in the item, but no limit name after it
     return false;
     }
 
@@ -9034,6 +9174,12 @@ static char addHeldToContainer( LiveObject *inPlayer,
                 idToAdd = r->newTarget;
                 }
             
+            
+            if( inPlayer->numContained > 0 ) {
+                // negative to indicate sub-container
+                idToAdd *= -1;
+                }
+
             int swapInd = getContainerSwapIndex ( inPlayer,
                                                   idToAdd,
                                                   true,
@@ -13059,8 +13205,6 @@ int main() {
                 nextPlayer->errorCauseString =
                     "Forced server shutdown";
                 }
-                
-            SettingsManager::setSetting( "forceShutdownMode", 0 );
             }
         else if( shutdownMode ) {
             // any disconnected players should be killed now
@@ -13156,6 +13300,21 @@ int main() {
                     nextPlayer->cravingFood.uniqueID < lowestCravingID ) {
                     
                     lowestCravingID = nextPlayer->cravingFood.uniqueID;
+                    }
+
+                // also send queued global messages
+                if( nextPlayer->globalMessageQueue.size() > 0 &&
+                    curStepTime - nextPlayer->lastGlobalMessageTime > 
+                    minGlobalMessageSpacingSeconds ) {
+                    
+                    // send next one
+                    char *message = 
+                        nextPlayer->globalMessageQueue.getElementDirect( 0 );
+                    nextPlayer->globalMessageQueue.deleteElement( 0 );
+                    
+                    sendGlobalMessage( message, nextPlayer );
+                    
+                    delete [] message;
                     }
                 }
             purgeStaleCravings( lowestCravingID );
@@ -13618,12 +13777,14 @@ int main() {
                      nextConnection->ticketServerAccepted &&
                      ! nextConnection->lifeTokenSpent ) {
 
+                // this "butDisconnected" state applies even if
+                // we see them as connected, becasue they are clearly
+                // reconnecting now
                 char liveButDisconnected = false;
                 
                 for( int p=0; p<players.size(); p++ ) {
                     LiveObject *o = players.getElement( p );
                     if( ! o->error && 
-                        ! o->connected && 
                         strcmp( o->email, 
                                 nextConnection->email ) == 0 ) {
                         liveButDisconnected = true;
@@ -15177,10 +15338,6 @@ int main() {
                                         gravePos.x, gravePos.y,
                                         nextPlayer->id );
                                     
-                                    setHeldGraveOrigin( adult, 
-                                                        gravePos.x,
-                                                        gravePos.y,
-                                                        0 );
                                     
                                     playerIndicesToSendUpdatesAbout.push_back(
                                         getLiveObjectIndex( holdingAdultID ) );
@@ -15237,6 +15394,12 @@ int main() {
                                     // in their hands
                                     adult->holdingID = babyBonesID;
                                     
+                                    setHeldGraveOrigin( adult, 
+                                                        gravePos.x,
+                                                        gravePos.y,
+                                                        0 );
+
+
                                     // this works to force client to play
                                     // creation sound for baby bones.
                                     adult->heldTransitionSourceID = 
@@ -15802,6 +15965,19 @@ int main() {
                         nextPlayer->xd = m.extraPos[ m.numExtraPos - 1].x;
                         nextPlayer->yd = m.extraPos[ m.numExtraPos - 1].y;
                         
+
+                        if( distance( nextPlayer->lastPlayerUpdateAbsolutePos,
+                                      m.extraPos[ m.numExtraPos - 1] ) 
+                            > 
+                            getMaxChunkDimension() / 2 ) {
+                            // they have moved a long way since their
+                            // last PU was sent
+                            // Send one now, mid-move
+                            
+                            playerIndicesToSendUpdatesAbout.push_back( i );
+                            }
+                        
+
                         
                         if( nextPlayer->xd == nextPlayer->xs &&
                             nextPlayer->yd == nextPlayer->ys ) {
@@ -16314,7 +16490,8 @@ int main() {
                             }
                         
                         if( otherToForgive != NULL ) {
-                            clearDBCurse( nextPlayer->email, 
+                            clearDBCurse( nextPlayer->id, 
+                                          nextPlayer->email, 
                                           otherToForgive->email );
                             
                             char *message = 
@@ -17932,11 +18109,8 @@ int main() {
                                     
                                     nextPlayer->foodStore += eatBonus;
 
-                                    checkForFoodEatingEmot( nextPlayer,
-                                                            targetObj->id );
-
-                                    int cap =
-                                        computeFoodCapacity( nextPlayer );
+                                    int cap = 
+                                        nextPlayer->lastReportedFoodCapacity;
                                     
                                     if( nextPlayer->foodStore > cap ) {
     
@@ -18387,7 +18561,7 @@ int main() {
                             ObjectRecord *obj = 
                                 getObject( nextPlayer->holdingID );
                             
-                            if( obj->foodValue > 0 ) {
+                            if( obj->foodValue > 0 || eatEverythingMode ) {
                                 holdingFood = true;
 
                                 if( strstr( obj->description, "noFeeding" )
@@ -18714,7 +18888,14 @@ int main() {
                                 ObjectRecord *obj = 
                                     getObject( nextPlayer->holdingID );
                                 
-                                int cap = computeFoodCapacity( targetPlayer );
+                                // don't use "live" computed capacity here
+                                // because that will allow player to spam
+                                // click to pack in food between food
+                                // decrements when they are growing
+                                // instead, stick to the food cap shown
+                                // in the client (what we last reported
+                                // to them)
+                                int cap = targetPlayer->lastReportedFoodCapacity;
                                 
 
                                 // first case:
@@ -18753,6 +18934,31 @@ int main() {
                                             isContainmentTransition = true;
                                             }
                                         
+                                        if( clickedClothingTrans == NULL ) {
+                                            // check if held has instant-decay
+                                            TransRecord *heldDecay = 
+                                                getPTrans( 
+                                                    -1, 
+                                                    nextPlayer->holdingID );
+                                            if( heldDecay != NULL &&
+                                                heldDecay->autoDecaySeconds
+                                                == 1 &&
+                                                heldDecay->newTarget > 0 ) {
+                                                
+                                                // force decay NOW and try again
+                                                handleHeldDecay(
+                                                nextPlayer,
+                                                i,
+                                                &playerIndicesToSendUpdatesAbout,
+                                                &playerIndicesToSendHealingAbout );
+                                                clickedClothingTrans =
+                                                    getPTrans( 
+                                                        nextPlayer->holdingID,
+                                                        clickedClothing->id );
+                                                }
+                                            }
+                                        
+
                                         if( clickedClothingTrans != NULL ) {
                                             int na =
                                                 clickedClothingTrans->newActor;
@@ -18832,7 +19038,7 @@ int main() {
                                     }
                                 // next case, holding food
                                 // that couldn't be put into clicked clothing
-                                else if( (obj->foodValue > 0 || obj->bonusValue > 0) && 
+                                else if( (obj->foodValue > 0 || obj->bonusValue > 0 || eatEverythingMode) && 
                                          (targetPlayer->foodStore < cap || strstr( obj->description, "modTool")) &&
                                          ! couldHaveGoneIn ) {
                                     
@@ -18845,7 +19051,13 @@ int main() {
                                     targetPlayer->lastAteFillMax =
                                         targetPlayer->foodStore;
                                     
-                                    targetPlayer->foodStore += obj->foodValue;
+                                    if ( eatEverythingMode ) {
+                                        // set the sustenance of everything to 1
+                                        targetPlayer->foodStore += 1;
+                                    }
+                                    else {
+                                        targetPlayer->foodStore += obj->foodValue;
+                                    }
                                     
                                     updateYum( targetPlayer, obj->id,
                                                targetPlayer == nextPlayer );
@@ -19152,9 +19364,6 @@ int main() {
                                     // correctly.  A naive implementation for
                                     // now.  Works for removing sword
                                     // from backpack
-
-                                    nextPlayer->holdingID =
-                                        bareHandClothingTrans->newActor;
 
                                     handleHoldingChange( 
                                         nextPlayer,
@@ -20015,6 +20224,19 @@ int main() {
 
                 
                 if( ! nextPlayer->isTutorial ) {
+                    GridPos deathPos = 
+                        getPlayerPos( nextPlayer );
+                    
+                    int killerID = -1;
+                    if( nextPlayer->murderPerpID > 0 ) {
+                        killerID = nextPlayer->murderPerpID;
+                        }
+                    else if( nextPlayer->deathSourceID > 0 ) {
+                        // include as negative of ID
+                        killerID = - nextPlayer->deathSourceID;
+                        }
+                    // never have suicide in this case
+
                     logDeath( nextPlayer->id,
                               nextPlayer->email,
                               nextPlayer->isEve,
@@ -20025,7 +20247,7 @@ int main() {
                               nextPlayer->xd, nextPlayer->yd,
                               players.size() - 1,
                               false,
-                              nextPlayer->murderPerpID,
+                              killerID,
                               nextPlayer->murderPerpEmail );
                                             
                     if( shutdownMode ) {
@@ -20127,9 +20349,9 @@ int main() {
                 nextPlayer->isNew = false;
                 
                 nextPlayer->deleteSent = true;
-                // wait 5 seconds before closing their connection
+                // wait 10 seconds before closing their connection
                 // so they can get the message
-                nextPlayer->deleteSentDoneETA = Time::getCurrentTime() + 5;
+                nextPlayer->deleteSentDoneETA = Time::getCurrentTime() + 10;
                 
                 if( areTriggersEnabled() ) {
                     // add extra time so that rest of triggers can be received
@@ -20318,7 +20540,9 @@ int main() {
                                   male,
                                   dropPos.x, dropPos.y,
                                   players.size() - 1,
-                                  disconnect );
+                                  disconnect,
+                                  killerID,
+                                  nextPlayer->murderPerpEmail );
                     
                         if( shutdownMode ) {
                             handleShutdownDeath( 
@@ -21407,6 +21631,23 @@ int main() {
                         
                         if( ! decrementedPlayer->deathLogged &&
                             ! decrementedPlayer->isTutorial ) {    
+                            
+                            
+                            // yes, they starved to death here
+                            // but also log case where they were wounded
+                            // before starving.  Thus, the true cause
+                            // of death should be the wounding that made
+                            // them helpless and caused them to starve
+                            int killerID = -1;
+                            if( nextPlayer->murderPerpID > 0 ) {
+                                killerID = nextPlayer->murderPerpID;
+                                }
+                            else if( nextPlayer->deathSourceID > 0 ) {
+                                // include as negative of ID
+                                killerID = - nextPlayer->deathSourceID;
+                                }
+                            // never have suicide in this case
+
                             logDeath( decrementedPlayer->id,
                                       decrementedPlayer->email,
                                       decrementedPlayer->isEve,
@@ -21415,7 +21656,9 @@ int main() {
                                       ! getFemale( decrementedPlayer ),
                                       deathPos.x, deathPos.y,
                                       players.size() - 1,
-                                      false );
+                                      false,
+                                      killerID,
+                                      nextPlayer->murderPerpEmail );
                             }
                         
                         if( shutdownMode &&
@@ -23900,6 +24143,27 @@ int main() {
                         nextPlayer->foodStore = cap;
                         }
                     
+                    if( cap > nextPlayer->lastReportedFoodCapacity ) {
+                        
+                        // stomach grew
+                        
+                        // fill empty space from bonus store automatically
+                        int extraCap = 
+                            cap - nextPlayer->lastReportedFoodCapacity;
+                        
+                        while( nextPlayer->yummyBonusStore > 0 && 
+                               extraCap > 0 &&
+                               nextPlayer->foodStore < cap ) {
+                            nextPlayer->foodStore ++;
+                            extraCap --;
+                            nextPlayer->yummyBonusStore--;
+                            }
+                        }
+                    
+
+                    nextPlayer->lastReportedFoodCapacity = cap;
+                    
+
                     int yumMult = nextPlayer->yummyFoodChain.size() - 1;
                     
                     if( yumMult < 0 ) {
@@ -24202,6 +24466,8 @@ int main() {
                     delete [] nextPlayer->deathReason;
                     }
                 
+                nextPlayer->globalMessageQueue.deallocateStringElements();
+
                 delete nextPlayer->babyBirthTimes;
                 delete nextPlayer->babyIDs;
 
@@ -24233,6 +24499,8 @@ int main() {
     
     
     AppLog::info( "Done." );
+    
+    SettingsManager::setSetting( "forceShutdownMode", 0 );
 
     return 0;
     }

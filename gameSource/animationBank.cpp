@@ -49,9 +49,9 @@ static int maxID;
 
 
 
-static const char *animTypeNames[9] = { "ground", "held", "moving", "ground2",
-                                        "eating", "doing", "endAnimType",
-                                        "extra", "extraB" };
+static const char *animTypeNames[11] = { "ground", "held", "moving", "ground2",
+                                        "eating", "doing", "biking", "sitting",
+                                        "endAnimType", "extra", "extraB" };
 
 
 const char *typeToName( AnimType inAnimType ) {
@@ -74,6 +74,14 @@ static char mouthFrameOutputStarted = false;
 // when the character is tripping
 bool isTrippingEffectOn;
 bool trippingEffectDisabled;
+
+
+static char shouldFileBeCached( char *inFileName ) {
+    if( strstr( inFileName, ".txt" ) != NULL ) {
+        return true;
+        }
+    return false;
+    }
 
 
 
@@ -165,7 +173,8 @@ int initAnimationBankStart( char *outRebuildingCache ) {
     currentFile = 0;
 
     
-    cache = initFolderCache( "animations", outRebuildingCache );
+    cache = initFolderCache( "animations", outRebuildingCache,
+                             shouldFileBeCached );
 
     return cache.numFiles;
     }
@@ -183,7 +192,7 @@ float initAnimationBankStep() {
 
     char *txtFileName = getFileName( cache, i );
                         
-    if( strstr( txtFileName, ".txt" ) != NULL ) {
+    if( shouldFileBeCached( txtFileName ) ) {
         
         // every .txt file is an animation file
 

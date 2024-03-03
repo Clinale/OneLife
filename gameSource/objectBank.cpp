@@ -55,6 +55,8 @@ static SimpleVector<int> allPossibleDeathMarkerIDs;
 
 static SimpleVector<int> allPossibleFoodIDs;
 
+static SimpleVector<int> allPossibleNonPermanentIDs;
+
 
 static SimpleVector<TapoutRecord> tapoutRecords;
 
@@ -256,6 +258,18 @@ void setDrawColor( FloatRGB inColor ) {
 
 
 
+static char shouldFileBeCached( char *inFileName ) {
+    if( strstr( inFileName, ".txt" ) != NULL &&
+        strstr( inFileName, "groundHeat_" ) == NULL &&
+        strcmp( inFileName, "nextObjectNumber.txt" ) != 0 &&
+        strcmp( inFileName, "nextObjectNumberOffset.txt" ) != 0 ) {
+        return true;
+        }
+    return false;
+    }
+
+
+
 static char autoGenerateUsedObjects = false;
 static char autoGenerateVariableObjects = false;
 
@@ -268,7 +282,8 @@ int initObjectBankStart( char *outRebuildingCache,
     currentFile = 0;
     
 
-    cache = initFolderCache( "objects", outRebuildingCache );
+    cache = initFolderCache( "objects", outRebuildingCache,
+                             shouldFileBeCached );
 
     autoGenerateUsedObjects = inAutoGenerateUsedObjects;
     autoGenerateVariableObjects = inAutoGenerateVariableObjects;
@@ -562,6 +577,15 @@ static void setupNoHighlight( ObjectRecord *inR ) {
         inR->noHighlight = true;
         }
     }
+    
+    
+static void setupNoClickThrough( ObjectRecord *inR ) {
+    inR->noClickThrough = false;
+    
+    if( strstr( inR->description, "+noClickThrough" ) != NULL ) {
+        inR->noClickThrough = true;
+        }
+    }
 
 
 
@@ -612,34 +636,43 @@ static void setupTapout( ObjectRecord *inR ) {
     char *triggerPos = strstr( inR->description, "+tapoutTrigger" );
                 
     if( triggerPos != NULL ) {
-        int xGrid, yGrid;
-        int xLimit, yLimit;
-        int buildCountLimit = -1;
-        int postBuildLimitX = 0;
-        int postBuildLimitY = 0;
+        int xGrid = -1;
+        int yGrid = -1;
+        int xLimit = -1;
+        int yLimit = -1;
+        int tapoutCountLimit = -1;
         
         int numRead = sscanf( triggerPos, 
-                              "+tapoutTrigger,%d,%d,%d,%d,"
-                              "%d,%d,%d",
+                              "+tapoutTrigger,%d,%d,%d,%d,%d",
                               &xGrid, &yGrid,
                               &xLimit, &yLimit,
-                              &buildCountLimit,
-                              &postBuildLimitX,
-                              &postBuildLimitY );
-        if( numRead == 4 || numRead == 7 ) {
+                              &tapoutCountLimit );
+        if( numRead == 2 || numRead == 4 || numRead == 5 ) {
             // valid tapout trigger
             TapoutRecord r;
             
             r.triggerID = inR->id;
-            r.gridSpacingX = xGrid;
-            r.gridSpacingY = yGrid;
-            r.limitX = xLimit;
-            r.limitY = yLimit;
             
-            r.buildCountLimit = buildCountLimit;
-            r.buildCount = 0;
-            r.postBuildLimitX = postBuildLimitX;
-            r.postBuildLimitY = postBuildLimitY;
+            r.gridSpacingX = -1;
+            r.gridSpacingY = -1;
+            r.limitX = -1;
+            r.limitY = -1;
+            r.tapoutCountLimit = -1;
+            r.specificX = 9999;
+            r.specificY = 9999;            
+            
+            if( numRead == 2 ) {
+                r.specificX = xGrid;
+                r.specificY = yGrid;
+                }
+            else if( numRead == 4 || numRead == 5 ) {
+                r.gridSpacingX = xGrid;
+                r.gridSpacingY = yGrid;
+                r.limitX = xLimit;
+                r.limitY = yLimit;
+                if( numRead == 5 ) 
+                    r.tapoutCountLimit = tapoutCountLimit;
+                }
             
             tapoutRecords.push_back( r );
             
@@ -726,9 +759,7 @@ float initObjectBankStep() {
                 
     char *txtFileName = getFileName( cache, i );
             
-    if( strstr( txtFileName, ".txt" ) != NULL &&
-        strstr( txtFileName, "groundHeat_" ) == NULL &&
-        strcmp( txtFileName, "nextObjectNumber.txt" ) != 0 ) {
+    if( shouldFileBeCached( txtFileName ) ) {
                             
         // an object txt file!
                     
@@ -773,6 +804,8 @@ float initObjectBankStep() {
                 setupOwned( r );
                 
                 setupNoHighlight( r );
+                
+                setupNoClickThrough( r );
                 
                 setupMaxPickupAge( r );
                 
@@ -1103,6 +1136,10 @@ float initObjectBankStep() {
                 
                 if( r->foodValue > 0 || r->bonusValue > 0 ) {
                     allPossibleFoodIDs.push_back( r->id );
+                    }
+
+                if( ! r->permanent ) {
+                    allPossibleNonPermanentIDs.push_back( r->id );
                     }
 
                 next++;
@@ -2292,54 +2329,84 @@ void setupSpriteUseVis( ObjectRecord *inObject, int inUsesRemaining,
 
         int d = inUsesRemaining;
         
-        // hide some sprites
+
         
-        int numSpritesLeft = 
-            ( d * (numVanishingSprites) ) / numUses;
+        // hide some vanishing sprites
+        if( numVanishingSprites > 0 ) {
+            
+            int numSpritesLeft = 
+                ( d * (numVanishingSprites) ) / numUses;
+            
+            int numInLastDummy = numVanishingSprites / numUses;
+            
+            int numInFirstDummy = ( ( numUses - 1 ) *
+                                    numVanishingSprites ) / numUses;
+            
+            if( numInLastDummy == 0 ) {
+                // add 1 to everything to pad up, so last
+                // dummy has 1 sprite in it
+                numSpritesLeft += 1;
+                
+                numInFirstDummy += 1;
+                }
+
+            if( numSpritesLeft > numVanishingSprites ) {
+                numSpritesLeft = numVanishingSprites;
+                }
+            if( numInFirstDummy > numVanishingSprites ) {
+                numInFirstDummy = numVanishingSprites;
+                }
         
-        int numInLastDummy = numVanishingSprites / numUses;
+
+            if( numInFirstDummy == numVanishingSprites ) {
+                // no change between full object and first dummy (between full
+                // and one less than full)
+                
+                // Need a visual change here too
+                
+                // pull all the non-1-sprite phases down
+                // this ensures that none of them look like the full object
+                if( numSpritesLeft > 1 ) {
+                    numSpritesLeft --;
+                    }
+                }        
+            
+            
+            for( int v=numSpritesLeft; v<numVanishingSprites; v++ ) {
+                
+                inSpriteSkipDrawing[ vanishingIndices.getElementDirect( v ) ] = 
+                    true;
+                }
+            }
         
-        if( numInLastDummy == 0 ) {
+
+
+        // now handle appearing sprites
+        if( numAppearingSprites > 0 ) {
+            
+            int numInvisSpritesLeft = 
+                lrint( ( d * (numAppearingSprites) ) / (double)numUses );
+            
+            /*
+            // testing... do we need to do this?
+            int numInvisInLastDummy = numAppearingSprites / numUses;
+            
+            if( numInLastDummy == 0 ) {
             // add 1 to everything to pad up, so last
             // dummy has 1 sprite in it
             numSpritesLeft += 1;
             }
-                        
-
-        if( numSpritesLeft > numVanishingSprites ) {
-            numSpritesLeft = numVanishingSprites;
-            }
-
-        for( int v=numSpritesLeft; v<numVanishingSprites; v++ ) {
-            
-            inSpriteSkipDrawing[ vanishingIndices.getElementDirect( v ) ] = 
-                true;
-            }
-
-
-        // now handle appearing sprites
-        int numInvisSpritesLeft = 
-            lrint( ( d * (numAppearingSprites) ) / (double)numUses );
-                        
-        /*
-        // testing... do we need to do this?
-        int numInvisInLastDummy = numAppearingSprites / numUses;
+            */
         
-        if( numInLastDummy == 0 ) {
-        // add 1 to everything to pad up, so last
-        // dummy has 1 sprite in it
-        numSpritesLeft += 1;
-        }
-        */
-        
-        if( numInvisSpritesLeft > numAppearingSprites ) {
-            numInvisSpritesLeft = numAppearingSprites;
-            }
-
-        for( int v=0; v<numAppearingSprites - numInvisSpritesLeft; v++ ) {
+            if( numInvisSpritesLeft > numAppearingSprites ) {
+                numInvisSpritesLeft = numAppearingSprites;
+                }
             
-            inSpriteSkipDrawing[ appearingIndices.getElementDirect( v ) ] = 
-                false;
+            for( int v=0; v<numAppearingSprites - numInvisSpritesLeft; v++ ) {
+                
+                inSpriteSkipDrawing[ appearingIndices.getElementDirect( v ) ] = 
+                    false;
+                }
             }
         }
     }
@@ -2426,6 +2493,7 @@ static void freeObjectRecord( int inID ) {
             deathMarkerObjectIDs.deleteElementEqualTo( inID );
             allPossibleDeathMarkerIDs.deleteElementEqualTo( inID );
             allPossibleFoodIDs.deleteElementEqualTo( inID );
+            allPossibleNonPermanentIDs.deleteElementEqualTo( inID );
 
             if( race <= MAX_RACE ) {
                 racePersonObjectIDs[ race ].deleteElementEqualTo( inID );
@@ -2515,6 +2583,7 @@ void freeObjectBank() {
     deathMarkerObjectIDs.deleteAll();
     allPossibleDeathMarkerIDs.deleteAll();
     allPossibleFoodIDs.deleteAll();
+    allPossibleNonPermanentIDs.deleteAll();
     
     for( int i=0; i<= MAX_RACE; i++ ) {
         racePersonObjectIDs[i].deleteAll();
@@ -2995,6 +3064,7 @@ int addObject( const char *inDescription,
 
 
     int nextObjectNumber = 1;
+    int nextObjectNumberOffset = 0;
     
     if( objectsDir.exists() && objectsDir.isDirectory() ) {
                 
@@ -3010,6 +3080,23 @@ int addObject( const char *inDescription,
                 sscanf( nextNumberString, "%d", &nextObjectNumber );
                 
                 delete [] nextNumberString;
+                }
+            }
+            
+        File *nextNumberOffsetFile = 
+            objectsDir.getChildFile( "nextObjectNumberOffset.txt" );
+            
+        if( nextNumberOffsetFile->exists() ) {
+                    
+            char *nextNumberOffsetString = 
+                nextNumberOffsetFile->readFileContents();
+
+            if( nextNumberOffsetString != NULL ) {
+                sscanf( nextNumberOffsetString, "%d", &nextObjectNumberOffset );
+                
+                nextObjectNumber += nextObjectNumberOffset;
+                
+                delete [] nextNumberOffsetString;
                 }
             }
         
@@ -3278,20 +3365,38 @@ int addObject( const char *inDescription,
         delete objectFile;
         
         if( inReplaceID == -1 ) {
-            nextObjectNumber++;
+            if( nextObjectNumberOffset > 0 ) {
+                nextObjectNumberOffset++;
+                
             
-        
-            char *nextNumberString = autoSprintf( "%d", nextObjectNumber );
-        
-            File *nextNumberFile = 
-                objectsDir.getChildFile( "nextObjectNumber.txt" );
+                char *nextNumberOffsetString = autoSprintf( "%d", nextObjectNumberOffset );
             
-            nextNumberFile->writeToFile( nextNumberString );
+                File *nextNumberOffsetFile = 
+                    objectsDir.getChildFile( "nextObjectNumberOffset.txt" );
+                
+                nextNumberOffsetFile->writeToFile( nextNumberOffsetString );
+                
+                delete [] nextNumberOffsetString;
+                
+                
+                delete nextNumberOffsetFile;
+                }
+            else {
+                nextObjectNumber++;
+                
             
-            delete [] nextNumberString;
+                char *nextNumberString = autoSprintf( "%d", nextObjectNumber );
             
-            
-            delete nextNumberFile;
+                File *nextNumberFile = 
+                    objectsDir.getChildFile( "nextObjectNumber.txt" );
+                
+                nextNumberFile->writeToFile( nextNumberString );
+                
+                delete [] nextNumberString;
+                
+                
+                delete nextNumberFile;
+                }
             }
         }
     
@@ -3416,6 +3521,7 @@ int addObject( const char *inDescription,
     deathMarkerObjectIDs.deleteElementEqualTo( newID );
     allPossibleDeathMarkerIDs.deleteElementEqualTo( newID );
     allPossibleFoodIDs.deleteElementEqualTo( newID );
+    allPossibleNonPermanentIDs.deleteElementEqualTo( newID );
     
     if( r->deathMarker ) {
         deathMarkerObjectIDs.push_back( newID );
@@ -3565,6 +3671,8 @@ int addObject( const char *inDescription,
     setupOwned( r );
     
     setupNoHighlight( r );
+    
+    setupNoClickThrough( r );
                 
     setupMaxPickupAge( r );
 
@@ -4637,6 +4745,12 @@ SimpleVector<int> *getAllPossibleDeathIDs() {
 SimpleVector<int> *getAllPossibleFoodIDs() {
     return &allPossibleFoodIDs;
     }
+
+
+
+SimpleVector<int> *getAllPossibleNonPermanentIDs() {
+    return &allPossibleNonPermanentIDs;
+}
 
 
 
@@ -5883,7 +5997,12 @@ char isSpriteSubset( int inSuperObjectID, int inSubObjectID,
         
         for( int ss=0; ss<superO->numSprites; ss++ ) {
             if( superO->sprites[ ss ] == spriteID ) {
-                return true;
+
+                // do make sure that color matches too
+                if( equal( superO->spriteColor[ ss ],
+                           subO->spriteColor[ 0 ] ) ) {
+                    return true;
+                    }
                 }
             }
         // if our sub-obj's single sprite does not occur, 
@@ -6221,13 +6340,4 @@ TapoutRecord *getTapoutRecord( int inObjectID ) {
             }
         }
     return NULL;
-    }
-
-
-
-void clearTapoutCounts() {
-    for( int i=0; i<tapoutRecords.size(); i++ ) {
-        TapoutRecord *r = tapoutRecords.getElement( i );
-        r->buildCount = 0;
-        }
     }

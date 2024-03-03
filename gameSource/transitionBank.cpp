@@ -60,6 +60,15 @@ static char autoGenerateGenericUseTransitions = false;
 static char autoGenerateVariableTransitions = false;
 
 
+static char shouldFileBeCached( char *inFileName ) {
+    if( strstr( inFileName, ".txt" ) != NULL ) {
+        return true;
+        }
+    return false;
+    }
+
+
+
 int initTransBankStart( char *outRebuildingCache,
                         char inAutoGenerateCategoryTransitions,
                         char inAutoGenerateUsedObjectTransitions,
@@ -76,7 +85,8 @@ int initTransBankStart( char *outRebuildingCache,
     currentFile = 0;
 
 
-    cache = initFolderCache( "transitions", outRebuildingCache );
+    cache = initFolderCache( "transitions", outRebuildingCache,
+                             shouldFileBeCached );
 
     return cache.numFiles;
     }
@@ -94,7 +104,7 @@ float initTransBankStep() {
 
     char *txtFileName = getFileName( cache, i );
                         
-    if( strstr( txtFileName, ".txt" ) != NULL ) {
+    if( shouldFileBeCached( txtFileName ) ) {
                     
         int actor = 0;
         int target = -2;
@@ -857,8 +867,17 @@ void initTransBankFinish() {
             newTrans.reverseUseTarget = false;
             newTrans.noUseActor = false;
             newTrans.noUseTarget = false;
-            newTrans.actorMinUseFraction = 0.0f;
-            newTrans.targetMinUseFraction = 0.0f;
+            // these values are only used when setting up use-dummy
+            // transitions (to tell us where the cut-off might be,
+            // when an object is too used to have a transition)
+            // In old code, we set these to 0.0 for all dummy transitions.
+            // However, our tool tip logic now uses this (to show a (FRESH)
+            // or (FULL) tag to show limits of which objects can be used
+            // in a transition.
+            // Thus, it's fine if these values "ride along" in
+            // dummy transitions.
+            newTrans.actorMinUseFraction = tr->actorMinUseFraction;
+            newTrans.targetMinUseFraction = tr->targetMinUseFraction;
             
             char processed = false;
             
@@ -1083,7 +1102,8 @@ void initTransBankFinish() {
                     if( target != NULL && newActor != NULL 
                         &&
                         target->numUses > 1 &&
-                        target->numUses == newActor->numUses ) {
+                        target->numUses == newActor->numUses &&
+                        target->useChance == newActor->useChance ) {
                         // use preservation between target and new actor
                         
                         // generate one for each use dummy
@@ -1098,7 +1118,8 @@ void initTransBankFinish() {
                     else if( actor != NULL && newTarget != NULL 
                         &&
                         actor->numUses > 1 &&
-                        actor->numUses == newTarget->numUses ) {
+                        actor->numUses == newTarget->numUses &&
+                        actor->useChance == newTarget->useChance ) {
                         // use preservation between actor and new target
                         
                         // generate one for each use dummy
@@ -1144,8 +1165,22 @@ void initTransBankFinish() {
             
             if( ! processed ) {
                 if( tr->lastUseActor || tr->lastUseTarget ) {
-                                    
-                    if( tr->lastUseActor && 
+                    
+                    if( tr->lastUseActor && tr->lastUseTarget &&
+                        actor != NULL && actor->numUses > 1 &&
+                        target != NULL && target->numUses > 1 ) {
+                        
+                        // map last use of actor to newActor
+                        if( ! tr->reverseUseActor ) {
+                            newTrans.actor = actor->useDummyIDs[0];
+                            }
+                        // map last use of target to newTarget
+                        if( ! tr->reverseUseTarget ) {
+                            newTrans.target = target->useDummyIDs[0];
+                            }
+                        transToAdd.push_back( newTrans );
+                        }
+                    else if( tr->lastUseActor && 
                         actor != NULL && 
                         actor->numUses > 1 ) {
                         
@@ -1183,7 +1218,7 @@ void initTransBankFinish() {
                                 }
                             }
                         }
-                    if( tr->lastUseTarget && 
+                    else if( tr->lastUseTarget && 
                         target != NULL && 
                         target->numUses > 1 ) {
                             
@@ -3042,6 +3077,19 @@ void printTrans( TransRecord *inTrans ) {
         printf( " (move=%s,dist=%d)", moveName, inTrans->desiredMoveDist );
         }
     
+    if( inTrans->actorChangeChance < 1.0 ) {
+        printf( " (pA=%0.2f,[%s])",
+                inTrans->actorChangeChance,
+                getObjName( inTrans->newActorNoChange ) );
+        }
+    
+    if( inTrans->targetChangeChance < 1.0 ) {
+        printf( " (pT=%0.2f,[%s])",
+                inTrans->targetChangeChance,
+                getObjName( inTrans->newTargetNoChange ) );
+        }
+    
+
     printf( "\n" );
     }
 
