@@ -16,11 +16,8 @@ jobs:
           jason=$(echo "$jason" | grep -o -P '(?<=int versionNumber = )\d+')
           if [ -z "$jason" ]; then echo "Failed to extract game source version"; exit 1; fi
 
-          dataverion=$(curl --silent -f https://raw.githubusercontent.com/Clinale/OneLifeData7/master/dataVersionNumber.txt)
+          dataversion=$(curl --silent -f https://raw.githubusercontent.com/Clinale/OneLifeData7/master/dataVersionNumber.txt)
           if [ $? -ne 0 ]; then echo "Failed to fetch data version"; exit 1; fi
-          
-          echo "code version: $jason"
-          echo "data version: $dataversion"
 
           if [$jason -lt $dataversion ]; then jason="$dataversion"; fi
 
