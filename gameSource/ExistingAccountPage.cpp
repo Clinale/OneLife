@@ -82,11 +82,11 @@ ExistingAccountPage::ExistingAccountPage()
           mKeyLockButton( mainFont, -108, 0, "!" ),
           mPasteButton( mainFont, 0, -112, translate( "paste" ) ),
           
-          mNextToGameTabButton( mainFont,  0, 0, "NEXT" ),          
+          mNextToGameTabButton( mainFont,  0, 0, translate( "nextToGame" )),          
           
           // Left Pane Page 1
-          mFriendsButton( mainFont, 0, 0, "YES" ),
-          mSoloButton( mainFont, 0, 0, "NO" ),
+          mFriendsButton( mainFont, 0, 0, translate( "friendYes" )),
+          mSoloButton( mainFont, 0, 0, translate( "soloYes" )),
           mTwinCodeField( mainFont, -360, 16, 10, false, 
                                      translate( "twinCode" ),
                                      NULL,
@@ -95,21 +95,21 @@ ExistingAccountPage::ExistingAccountPage()
           mTwinCodeCopyButton( mainFont, 0, 0, translate( "copy" ) ),
           mTwinCodePasteButton( mainFont, 0, 0, translate( "paste" ) ),
           
-          mSpecificButton( mainFont, 0, 0, "SPECIFIC" ),
-          mRandomButton( mainFont, 0, 0, "RANDOM" ),
+          mSpecificButton( mainFont, 0, 0, translate( "specific" )),
+          mRandomButton( mainFont, 0, 0, translate( "random" )),
           mSpawnSeed( mainFont, -360, -176, 10, false, 
-                                     "SPAWN CODE:",
+                                     translate( "spawnCode" ),
                                      NULL,
                                      // forbid spaces and hash
                                      " #" ),
           mSpawnSeedLockButton( mainFont, -108, -176, "!" ),
           mTargetFamily( mainFont, -360, -176, 10, true, 
-                                     "TARGET FAMILY NAME:",
+                                     translate( "targetFamily" ),
                                      // allow only alphabets
                                      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
           
-          mBackToAccountTabButton( mainFont, 0, 0, "BACK" ),
-          mLoginButton( mainFont, 0, 0, "PLAY" ),
+          mBackToAccountTabButton( mainFont, 0, 0, translate( "backToAccount" )),
+          mLoginButton( mainFont, 0, 0, translate( "play" )),
           
           // Right Pane
           mSettingsButton( mainFont, 360, -80, translate( "settingsButton" ) ),
@@ -126,7 +126,7 @@ ExistingAccountPage::ExistingAccountPage()
           
           // Not in use
           mGenesButton( mainFont, 522, 300, translate( "genesButton" ) ),
-          mClearAccountButton( mainFont, -360, -80, "CLEAR" ),
+          mClearAccountButton( mainFont, -360, -80, translate( "clearAccount" )),
           mReviewButton( mainFont, -400, -200, translate( "postReviewButton" ) ),
           mAtSignButton( mainFont, 252, 128, "@" ),
           mViewAccountButton( mainFont, 0, 64, translate( "view" ) ),
@@ -201,8 +201,8 @@ ExistingAccountPage::ExistingAccountPage()
         
         
         
-    const char *specifySpawnChoiceList[2] = { "SPECIFY FAMILY NAME",
-                                              "USE SPAWN CODE" };
+    const char *specifySpawnChoiceList[2] = { translate( "specifyFamilyName" ),
+                                              translate( "useSpawnCode" )};
     
     mSeedOrFamilyButtonSet = 
         new RadioButtonSet( mainFont, 0, 0,
@@ -383,31 +383,31 @@ ExistingAccountPage::ExistingAccountPage()
 
     
 
-    mEmailField.setCursorTip( "GET YOUR ACCOUNT FROM THE DISCORD BOT" );
-    mKeyField.setCursorTip( "GET YOUR ACCOUNT FROM THE DISCORD BOT" );
+    mEmailField.setCursorTip( translate( "emailTip" ));
+    mKeyField.setCursorTip( translate( "keyTip "));
     
-    mNextToGameTabButton.setCursorTip( "NEXT PAGE" );
+    mNextToGameTabButton.setCursorTip( translate( "nextToGameTip" ));
     
     mFriendsButton.setCursorTip( translate( "friendsTip" ) );
     mSoloButton.setCursorTip( translate( "friendsTip" ) );
     mTwinCodeField.setCursorTip( translate( "twinTip" ) );
-    mGenerateButton.setCursorTip( "GENERATE A RANDOM TWIN CODE" );
-    mPlayerCountRadioButtonSet->setCursorTip( "CHOOSE HOW MANY WILL JOIN" );
+    mGenerateButton.setCursorTip( translate( "generateTip" ));
+    mPlayerCountRadioButtonSet->setCursorTip( translate( "playerCountRadioTip" ));
     
-    mSpecificButton.setCursorTip( "BE BORN INTO SPECIFIC FAMILY OR AT A FIXED SPAWN POINT" );
-    mRandomButton.setCursorTip( "BE BORN INTO A RANDOM FAMILY" );
-    mSpawnSeed.setCursorTip( "SPAWN CODE CAN BE ANY STRING OF TEXT OR NUMBERS, CASE SENSITIVE" );
-    mTargetFamily.setCursorTip( "ENTER THE NAME OF THE FAMILY YOU WANT TO JOIN" );
-    mSeedOrFamilyButtonSet->setCursorTip( "SPECIFY THE FAMILY YOU WANT TO JOIN, OR MAKE A FIXED SPAWN POINT WITH A SPAWN CODE" );
+    mSpecificButton.setCursorTip( translate( "specificTip" ));
+    mRandomButton.setCursorTip( translate( "randomTip" ));
+    mSpawnSeed.setCursorTip( translate( "spawnTip" ));
+    mTargetFamily.setCursorTip( translate( "targetFamilyTip" ));
+    mSeedOrFamilyButtonSet->setCursorTip( translate( "seedOrFamilyTip" ));
     
-    mBackToAccountTabButton.setCursorTip( "BACK TO ACCOUNT PAGE" );
-    mLoginButton.setCursorTip( "BE BORN INTO THE WORLD" );
+    mBackToAccountTabButton.setCursorTip( translate( "backToAccountTip" ));
+    mLoginButton.setCursorTip( translate( "loginTip" ));
     
-    mSettingsButton.setCursorTip( "CHANGE GAME SETTINGS" );
-    mTutorialButton.setCursorTip( "START THE TUTORIAL" );
+    mSettingsButton.setCursorTip( translate( "settingsTip" ));
+    mTutorialButton.setCursorTip( translate( "tutorialTip" ));
     mFamilyTreesButton.setCursorTip( translate( "familyTreesTip" ) );
     mTechTreeButton.setCursorTip( translate( "techTreeTip" ) );
-    mCancelButton.setCursorTip( "CLOSE THE GAME" );
+    mCancelButton.setCursorTip( translate( "cancelTip" ));
     
     mGenesButton.setCursorTip( translate( "genesTip" ) );
     mClearAccountButton.setCursorTip( translate( "clearAccountTip" ) );
@@ -587,14 +587,14 @@ void ExistingAccountPage::updateLeftPane() {
     if( !tutorialDone ) {
         leftPanePage = 0;
         
-        mTutorialButton.setLabelText( "PLAY" );
-        mTutorialButton.setCursorTip( "START THE GAME" );
+        mTutorialButton.setLabelText( translate( "play" ));
+        mTutorialButton.setCursorTip( translate( "startTheGame" ));
         mTutorialButton.setSize( 360, 60 );
         mTutorialButton.setPosition( mEmailField.getRightEdgeX() - ( mNextToGameTabButton.getWidth()/2 ), -272 );
         }
     else {
         mTutorialButton.setLabelText( translate( "tutorial" ) );
-        mTutorialButton.setCursorTip( "START THE TUTORIAL" );
+        mTutorialButton.setCursorTip( translate( "tutorialTip" ));
         mTutorialButton.setSize( 175, 60 );
         // setPosition in this case is done elsewhere with the right pane buttons
         }
@@ -1594,14 +1594,14 @@ void ExistingAccountPage::draw( doublePair inViewCenter,
             pos.x = mEmailField.getLeftEdgeX() + mainFont->getFontHeight() * 0.25 * 0.5;
             pos.y += 30 + 16;
             setDrawColor( 1, 1, 1, 1.0 );
-            if( mSpecificButton.isVisible() ) mainFont->drawString( "WHERE TO SPAWN?", pos, alignLeft );
+            if( mSpecificButton.isVisible() ) mainFont->drawString( translate( "whereToSpawn" ), pos, alignLeft );
             }
         
         pos = mFriendsButton.getPosition();
         pos.x = mEmailField.getLeftEdgeX() + mainFont->getFontHeight() * 0.25 * 0.5;
         pos.y += 30 + 16;
         setDrawColor( 1, 1, 1, 1.0 );
-        if( mFriendsButton.isVisible() ) mainFont->drawString( "PLAY WITH FRIENDS?", pos, alignLeft );        
+        if( mFriendsButton.isVisible() ) mainFont->drawString( translate( "playWithFriends" ), pos, alignLeft );        
         }
 
 

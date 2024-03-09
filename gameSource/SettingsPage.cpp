@@ -46,14 +46,14 @@ SettingsPage::SettingsPage()
           // Left Pane
           mRestartButton( mainFont, 360, -272, translate( "restartButton" ) ),
           
-          mGameplayButton( mainFont, -452.5, 288, "GAMEPLAY" ),
-          mControlButton( mainFont, -452.5, 192, "CONTROL" ),
-          mScreenButton( mainFont, -452.5, 96, "SCREEN" ),
-          mSoundButton( mainFont, -452.5, 0, "SOUND" ),
+          mGameplayButton( mainFont, -452.5, 288, translate( "gamePlayButton" )),
+          mControlButton( mainFont, -452.5, 192, translate( "controlButton" )),
+          mScreenButton( mainFont, -452.5, 96, translate( "screenButton" )),
+          mSoundButton( mainFont, -452.5, 0, translate( "soundButton" )),
 #ifdef USE_DISCORD
-          mDiscordButton( mainFont, -452.5, -96, "DISCORD" ),
+          mDiscordButton( mainFont, -452.5, -96, translate( "discordButton" )),
 #endif // USE_DISCORD
-          mAdvancedButton( mainFont, -452.5, -192, "ADVANCED" ),
+          mAdvancedButton( mainFont, -452.5, -192, translate( "advancedButton" )),
 
           mBackButton( mainFont, -452.5, -288, translate( "backButton" ) ),
           
@@ -255,46 +255,46 @@ SettingsPage::SettingsPage()
     // addComponent( &mEditAccountButton );
     mEditAccountButton.addActionListener( this );
     
-    mRestartButton.setCursorTip( "RESTART THE GAME" );
+    mRestartButton.setCursorTip( translate( "restartTip" ));
     
-    mGameplayButton.setCursorTip( "GAMEPLAY SETTINGS" );
-    mControlButton.setCursorTip( "CONTROL SETTINGS" );
-    mScreenButton.setCursorTip( "SCREEN SETTINGS" );
-    mSoundButton.setCursorTip( "SOUND SETTINGS" );
+    mGameplayButton.setCursorTip( translate( "gamePlayTip" ));
+    mControlButton.setCursorTip( translate( "controlTip" ));
+    mScreenButton.setCursorTip( translate( "screenTip" ));
+    mSoundButton.setCursorTip( translate( "soundTip" ));
 #ifdef USE_DISCORD
-    mDiscordButton.setCursorTip("DISCORD RICH PRESENCE SETTINGS");
+    mDiscordButton.setCursorTip( translate( "discordTip" ));
 #endif // USE_DISCORD
-    mAdvancedButton.setCursorTip("ADVANCED GAMEPLAY SETTINGS");
+    mAdvancedButton.setCursorTip( translate( "advancedTip" ));
 
-    mBackButton.setCursorTip( "GO BACK" );
+    mBackButton.setCursorTip( translate( "backTip" ));
     
-    mEnableFOVBox.setCursorTip( "ENABLE ZOOM-IN AND ZOOM-OUT WITH MOUSE WHEEL SCROLLING" );
-    mEnableCenterCameraBox.setCursorTip( "ALWAYS CENTER THE CAMERA VIEW ON YOUR CHARACTER" );
-    mEnableNudeBox.setCursorTip( "ENABLE NUDITY" );
+    mEnableFOVBox.setCursorTip( translate( "enableFOVTip" ));
+    mEnableCenterCameraBox.setCursorTip( translate( "enableCenterCameraTip" ));
+    mEnableNudeBox.setCursorTip( translate( "enableNudeTip" ));
     
-    mUseCustomServerBox.setCursorTip( "CONNECT TO A CUSTOM SERVER" );
-    mCustomServerAddressField.setCursorTip( "CUSTOM SERVER ADDRESS" );
-    mCustomServerPortField.setCursorTip( "CUSTOM SERVER PORT" );
+    mUseCustomServerBox.setCursorTip( translate( "useCustomServerTip" ));
+    mCustomServerAddressField.setCursorTip( translate( "customServerAddressTip" ));
+    mCustomServerPortField.setCursorTip( translate( "customServerPortTip" ));
     
-    mEnableKActionsBox.setCursorTip( "ENABLE WASD MOVEMENT AND ACTION" );
-    mCursorModeSet->setCursorTip( "USE DRAWN CURSOR FOR ULTRAWIDE SCREEN" );
+    mEnableKActionsBox.setCursorTip( translate( "enableKActionsTip" ));
+    mCursorModeSet->setCursorTip( translate( "cursorModeTip" ));
     
-    mRedetectButton.setCursorTip( "RESTART THE GAME TO REDETECT FRAME RATE" );
-    mFullscreenBox.setCursorTip( "TOGGLE BETWEEN FULLSCREEN AND WINDOWED MODE" );
-    mBorderlessBox.setCursorTip( "ALLOW CURSOR TO MOVE OUTSIDE THE GAME WINDOW" );
-    mTrippingEffectDisabledBox.setCursorTip( "DISABLE THE TRIPPING VISUAL EFFECT" );
+    mRedetectButton.setCursorTip( translate( "redetectTip" ));
+    mFullscreenBox.setCursorTip( translate( "fullScreenTip" ));
+    mBorderlessBox.setCursorTip( translate( "borderlessTip" ));
+    mTrippingEffectDisabledBox.setCursorTip( translate( "trippingEffectDisableTip" ));
 
 #ifdef USE_DISCORD
     // Discord
-    mEnableDiscordRichPresence.setCursorTip("SHOW \"PLAYING A GAME\" STATUS IN YOUR DISCORD PROFILE STATUS");
-    mEnableDiscordRichPresenceStatus.setCursorTip("SHOW AGE, GENDER AND IDLE STATUS OF CURRENT LIFE");
-    mEnableDiscordShowAgeInStatus.setCursorTip("SELECTIVELY TOGGLE ON OR OFF AGE DISPLAY IN THE STATUS HERE");
-    mEnableDiscordRichPresenceDetails.setCursorTip("SHOW FIRST NAME AND FAMILY NAME OF CURRENT LIFE");
-    mDiscordHideFirstNameInDetails.setCursorTip("HIDE FIRST NAME IN THE STATUS");
+    mEnableDiscordRichPresence.setCursorTip( translate( "enableDiscordRichPresenceTip" ));
+    mEnableDiscordRichPresenceStatus.setCursorTip( translate( "enableDiscordRichPresenceStatusTip" ));
+    mEnableDiscordShowAgeInStatus.setCursorTip( translate( "enableDiscordShowAgeInStatusTip" ));
+    mEnableDiscordRichPresenceDetails.setCursorTip( translate( "enableDiscordRichPresenceDetailsTip" ));
+    mDiscordHideFirstNameInDetails.setCursorTip( translate( "discordHideFirstNameInDetailsTip" ));
 #endif // USE_DISCORD
 
     mEnableAdvancedShowUseOnObjectHoverKeybind.setCursorTip(
-      "SHOW OBJECT REMAINING USE ON CURSOR HOVER. SHIFT+B TO ENABLE/DISABLE IN-GAME");
+     translate( "enableAdvancedTip" ));
     
     mOldFullscreenSetting = 
         SettingsManager::getIntSetting( "fullscreen", 1 );
@@ -836,7 +836,7 @@ void SettingsPage::draw( doublePair inViewCenter,
             pos.x -= 30;
             pos.y -= 2;
             
-            mainFont->drawString( "DISABLE FLASH EFFECT", pos, alignRight );
+            mainFont->drawString( translate( "disableFlashEffect" ), pos, alignRight );
             }
         
 
@@ -882,7 +882,7 @@ void SettingsPage::draw( doublePair inViewCenter,
         pos.x -= 30;
         pos.y -= 2;
 
-        mainFont->drawString( "ENABLE NUDITY", pos, alignRight );
+        mainFont->drawString( translate( "enableNudity" ), pos, alignRight );
         }
         
     if( mUseCustomServerBox.isVisible() ) {
@@ -908,7 +908,7 @@ void SettingsPage::draw( doublePair inViewCenter,
         pos.x -= 30;
         pos.y -= 2;
 
-        mainFont->drawString( "ENABLE ZOOM", pos, alignRight );
+        mainFont->drawString( translate( "enableZoom" ), pos, alignRight );
         }
 	
     if( mEnableKActionsBox.isVisible() ) {
@@ -917,7 +917,7 @@ void SettingsPage::draw( doublePair inViewCenter,
         pos.x -= 30;
         pos.y -= 2;
 
-        mainFont->drawString( "KEYBOARD ACTIONS", pos, alignRight );
+        mainFont->drawString( translate( "keyBoardActions" ), pos, alignRight );
         }
 	
     if( mEnableCenterCameraBox.isVisible() ) {
@@ -926,7 +926,7 @@ void SettingsPage::draw( doublePair inViewCenter,
         pos.x -= 30;
         pos.y -= 2;
 
-        mainFont->drawString( "CENTER CAMERA", pos, alignRight );
+        mainFont->drawString( translate( "centerCamera" ), pos, alignRight );
         }
 
 
@@ -958,7 +958,7 @@ void SettingsPage::draw( doublePair inViewCenter,
         pos.x -= 30;
         pos.y -= 2;
 
-        mainFont->drawString( "RICH PRESENCE ", pos, alignRight );
+        mainFont->drawString( translate( "richPresence" ), pos, alignRight );
         }
     if( mEnableDiscordRichPresenceStatus.isVisible() ) {
         doublePair pos = mEnableDiscordRichPresenceStatus.getPosition();
@@ -966,7 +966,7 @@ void SettingsPage::draw( doublePair inViewCenter,
         pos.x -= 30;
         pos.y -= 2;
 
-        mainFont->drawString( "RICH PRESENCE STATUS", pos, alignRight );
+        mainFont->drawString( translate( "richPresenceStatus" ), pos, alignRight );
         }
     if( mEnableDiscordShowAgeInStatus.isVisible() ) {
         doublePair pos = mEnableDiscordShowAgeInStatus.getPosition();
@@ -974,7 +974,7 @@ void SettingsPage::draw( doublePair inViewCenter,
         pos.x -= 30;
         pos.y -= 2;
 
-        mainFont->drawString( "SHOW AGE", pos, alignRight );
+        mainFont->drawString( translate( "showAge" ), pos, alignRight );
         }
     if( mEnableDiscordRichPresenceDetails.isVisible() ) {
         doublePair pos = mEnableDiscordRichPresenceDetails.getPosition();
@@ -982,7 +982,7 @@ void SettingsPage::draw( doublePair inViewCenter,
         pos.x -= 30;
         pos.y -= 2;
 
-        mainFont->drawString( "RICH PRESENCE DETAILS", pos, alignRight );
+        mainFont->drawString( translate( "richPresenceDetails" ), pos, alignRight );
         }
     if( mDiscordHideFirstNameInDetails.isVisible() ) {
         doublePair pos = mDiscordHideFirstNameInDetails.getPosition();
@@ -990,7 +990,7 @@ void SettingsPage::draw( doublePair inViewCenter,
         pos.x -= 30;
         pos.y -= 2;
 
-        mainFont->drawString( "HIDE FIRST NAME", pos, alignRight );
+        mainFont->drawString( translate( "hideFirstName" ), pos, alignRight );
         }    
     // prevent someone from making spamming requests to update their status, discord may block our key, due to spamming requests!
     // allow for at least 2 seconds to pass until the user is allowed to change the discord setting again.
@@ -1006,7 +1006,7 @@ void SettingsPage::draw( doublePair inViewCenter,
         pos.x -= 30;
         pos.y -= 2;
 
-        mainFont->drawString("SHOW USE ON HOVER", pos, alignRight);
+        mainFont->drawString( translate( "showUseOnHover" ), pos, alignRight);
     }
 }
 
