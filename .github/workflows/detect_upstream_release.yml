@@ -10,12 +10,17 @@ jobs:
       - name: check version mismatch
         id: mismatch
         run: |
-          jason=$(curl --silent -f https://raw.githubusercontent.com/twohoursonelife/OneLife/master/gameSource/game.cpp)
+          jason=$(curl --silent -f https://raw.githubusercontent.com/Clinale/OneLife/master/gameSource/game.cpp)
           if [ $? -ne 0 ]; then echo "Failed to fetch game source version"; exit 1; fi
 
           jason=$(echo "$jason" | grep -o -P '(?<=int versionNumber = )\d+')
           if [ -z "$jason" ]; then echo "Failed to extract game source version"; exit 1; fi
 
+          dataverion=$(curl --silent -f https://raw.githubusercontent.com/Clinale/OneLifeData7/master/dataVersionNumber.txt)
+          if [ $? -ne 0 ]; then echo "Failed to fetch data version"; exit 1; fi
+          
+          if [$jason -lt $dataversion ]; then jason="$dataversion"; fi
+          
           mine=$(curl --silent -f https://api.github.com/repos/Clinale/OneLife/releases/latest | jq -r .tag_name)
           if [ $? -ne 0 ]; then echo "Failed to fetch latest release version"; fi
 

@@ -17,15 +17,6 @@ jobs:
           cd miniOneLifeCompile
           ./getDependencies.sh
           ./cloneRepos.sh
-
-          cd ../OneLife
-          git pull
-          cd ../minorGems
-          git pull
-          cd ../OneLifeData7
-          git pull
-
-          cd ../miniOneLifeCompile
           ./applyFixesAndOverride.sh
           ./makeWindows.sh ${{ inputs.version }}
           ./makeLinux.sh ${{ inputs.version }}
