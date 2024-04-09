@@ -11,33 +11,35 @@ warning$WARNING: MAKE A COPY OF THIS FILE BEFORE EDITING
 @LINEHEIGHT=35
 
 #sheet1
-title$GAME COMMANDS$
-IF I PRESS ENTER TO SAY...
+title$ESC 查看游戏指令$
+按回车输入指令...
 space$0.25f
 sub$I AM XXX.$
-I WILL GIVE MYSELF A FAMILY NAME.
+给自己起名.
 sub$YOU ARE XXX.$
-I WILL NAME SOMEONE.
+给孩子命名.
 sub$LET ME BE INFERTILE.$
-I WILL NOT HAVE BABIES.
+让我绝育.
 sub$LET ME BE FERTILE.$
-I WILL HAVE BABIES AGAIN.
-sub$PASSWORD IS XXX$
-I WILL SAY A PASSWORD.
+让我能够生育.
+sub$I SAY XXX$
+我悄悄说出密码
+sub$MAGIC WORD IS XXX$
+我给密码锁设密码
 #sheet2
 title$$
-EMOTION COMMANDS:
+表情指令 加上/ 斜杠:
 space$0.25f
-sub$/HAPPY  /JOY  /LOVE  /SHOCK  /SAD$
-sub$/DEVIOUS  /HUBBA  /MAD  /TOUNGUE$
-sub$/HMPH  /BLUSH  /ILL  /OREALLY  /CRY$
-sub$/ANGRY  /YOOHOO  /POG  /PLEASE$
-sub$/CLOWN  /EYEROLL  /BROKELOVE  /ERM$
+sub$开心/HAPPY   大笑/JOY      惊叹/POG    心碎/BROKELOVE$
+sub$邪恶/DEVIOUS 舞眉/HUBBA   不满/MAD    吐舌/TOUNGUE$
+sub$恢复/OREALLY 脸红/BLUSH    生病/ILL    祈求/PLEASE$
+sub$愤怒/ANGRY   口哨/YOOHOO 爱/LOVE   惊/SHOCK 苦/SAD$
+sub$小丑/CLOWN   白眼/EYEROLL 嗯/HMPH   呃/ERM  哭/CRY$
 space$0.75f
-OTHER COMMANDS:
+其他指令:
 space$0.25f
-sub$/DIE$TO ENTER THE AFTERLIFE$
-sub$/FPS$TO SHOW/HIDE FPS$
-sub$/NET$TO SHOW/HIDE NET$
-sub$/PING$TO SHOW/HIDE PING$
-sub$/DISCONNECT$TO DISCONNECT$
+sub$/DIE$飞升$
+sub$/FPS$显示/关闭 帧率$
+sub$/NET$显示/关闭 网络$
+sub$/PING$显示/关闭 时延$
+sub$/DISCONNECT$断开连接$
