@@ -27,35 +27,6 @@ then
 fi
 
 
-
-# note that if we're running on cron-job automation, this might not work
-# in genral, we have never done cron-job automation for midnight updates
-# (because we are updating servers in batches) so it probably doesn't matter
-echo "" 
-echo "Logging in to steamcmd to make sure credentials are cached"
-echo ""
-
-steamcmd +login "jasonrohrergames" +quit
-
-
-
-# two arguments means automation
-if [ $# -ne 2 ]
-then
-	echo ""
-	echo ""
-	lastBuildID=`~/checkout/OneLifeWorking/scripts/getLatestSteamBuildID.sh`
-	
-	echo "Seeing last Steam build ID of $lastBuildID"
-	echo ""
-	echo "Check Steamworks and verify that this is correct."
-	echo ""
-	echo -n "Hit [ENTER] when ready: "
-	read
-fi
-
-
-
 echo "" 
 echo "Updating minorGems"
 echo ""
@@ -83,7 +54,7 @@ git pull --tags
 
 
 
-lastTaggedDataVersion=`git for-each-ref --sort=-creatordate --format '%(refname:short)' --count=1 refs/tags/OneLife_v* | sed -e 's/OneLife_v//'`
+lastTaggedDataVersion=`git for-each-ref --sort=-creatordate --format '%(refname:short)' --count=1 refs/tags/THOL_v* | sed -e 's/THOL_v//'`
 
 
 echo "" 
@@ -104,7 +75,7 @@ fi
 
 
 
-numNewChangsets=`git log OneLife_v$baseDataVersion..HEAD | grep commit | wc -l`
+numNewChangsets=`git log THOL_v$baseDataVersion..HEAD | grep commit | wc -l`
 
 
 echo "" 
@@ -140,7 +111,7 @@ cd ~/checkout/OneLifeWorking
 
 
 
-lastTaggedCodeVersion=`git for-each-ref --sort=-creatordate --format '%(refname:short)' --count=1 refs/tags/OneLife_v* | sed -e 's/OneLife_v//'`
+lastTaggedCodeVersion=`git for-each-ref --sort=-creatordate --format '%(refname:short)' --count=1 refs/tags/THOL_v* | sed -e 's/THOL_v//'`
 
 
 echo "" 
@@ -220,7 +191,7 @@ echo ""
 echo "Exporting base data for diffing"
 echo ""
 
-git checkout -q OneLife_v$baseDataVersion
+git checkout -q THOL_v$baseDataVersion
 
 git clone . ~/checkout/diffWorking/dataLast
 rm -rf ~/checkout/diffWorking/dataLast/.git*
@@ -354,7 +325,7 @@ rm */bin_cache.fcz
 
 
 
-newTag=OneLife_v$newVersion
+newTag=THOL_v$newVersion
 
 echo "" 
 echo "Updating live server data dataVersionNumber.txt to $newVersion"
