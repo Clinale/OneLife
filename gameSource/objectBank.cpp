@@ -758,7 +758,7 @@ float initObjectBankStep() {
 
                 
     char *txtFileName = getFileName( cache, i );
-            
+    printf("\n---------------\n[%s]\n---------------\n", txtFileName);
     if( shouldFileBeCached( txtFileName ) ) {
                             
         // an object txt file!
