@@ -526,6 +526,7 @@ typedef struct FreshConnection {
         int twinCount;
         char playerListSent;
 
+        int mMapD;
     } FreshConnection;
 
 
@@ -953,6 +954,7 @@ typedef struct LiveObject {
         
         SimpleVector<char*> globalMessageQueue;
 
+        int mMapD;
 
     } LiveObject;
 
@@ -4106,13 +4108,14 @@ GridPos getClosestPlayerPos( int inX, int inY ) {
 
 
 
-
-static int chunkDimensionX = 32;
-static int chunkDimensionY = 30;
+#define MAP_D 64
+#define MAX_MAP_D 64
+static int maxChunkDimensionX = 32;
+static int maxChunkDimensionY = 30;
 
 
 static int getMaxChunkDimension() {
-    return chunkDimensionX;
+    return maxChunkDimensionX;
     }
 
 
@@ -4402,7 +4405,9 @@ int sendMapChunkMessage( LiveObject *inO,
         yd = inDestOverrideY;
         }
     
-    
+    int chunkDimensionX = inO->mMapD / 2;
+    int chunkDimensionY = chunkDimensionX - 2;
+
     int halfW = chunkDimensionX / 2;
     int halfH = chunkDimensionY / 2;
     
@@ -4417,7 +4422,8 @@ int sendMapChunkMessage( LiveObject *inO,
         // send full rect centered on x,y
         
         inO->firstMapSent = true;
-        
+        //printf("startx: %d, starty: %d, cx: %d, cy:%d\n",
+        //    fullStartX, fullStartY, chunkDimensionX, chunkDimensionY);
         unsigned char *mapChunkMessage = getChunkMessage( fullStartX,
                                                           fullStartY,
                                                           chunkDimensionX,
@@ -4438,7 +4444,7 @@ int sendMapChunkMessage( LiveObject *inO,
         int lastX = inO->lastSentMapX;
         int lastY = inO->lastSentMapY;
 
-
+        //printf("lastX: %d, lastY: %d\n", lastX, lastY);
         // split next chunk into two bars by subtracting last chunk
         
         int horBarStartX = fullStartX;
@@ -4497,10 +4503,13 @@ int sendMapChunkMessage( LiveObject *inO,
             vertBarH -= horBarH;
             }
         
-        
+        //printf("horBarW: %d, horBarH: %d\n", horBarW, horBarH);
         // only send if non-zero width and height
         if( horBarW > 0 && horBarH > 0 ) {
             int len;
+            printf("horBar_startx: %d, horBar_starty: %d, cx: %d, cy:%d\n",
+                horBarStartX, horBarStartY, horBarW, horBarH);
+
             unsigned char *mapChunkMessage = getChunkMessage( horBarStartX,
                                                               horBarStartY,
                                                               horBarW,
@@ -4516,8 +4525,11 @@ int sendMapChunkMessage( LiveObject *inO,
             
             delete [] mapChunkMessage;
             }
+        //printf("vertBarW: %d, vertBarH: %d\n", vertBarW, vertBarH);
         if( vertBarW > 0 && vertBarH > 0 ) {
             int len;
+            //printf("vertBar_startx: %d, vertBar_starty: %d, cx: %d, cy:%d\n",
+            //    vertBarStartX, vertBarStartY, vertBarW, vertBarH);
             unsigned char *mapChunkMessage = getChunkMessage( vertBarStartX,
                                                               vertBarStartY,
                                                               vertBarW,
@@ -6910,7 +6922,7 @@ int processLoggedInPlayer( char inAllowReconnect,
                            // set to -2 to force Eve
                            int inForceParentID = -1,
                            int inForceDisplayID = -1,
-                           GridPos *inForcePlayerPos = NULL ) {
+                           GridPos *inForcePlayerPos = NULL) {
     
 
     usePersonalCurses = SettingsManager::getIntSetting( "usePersonalCurses",
@@ -7125,6 +7137,9 @@ int processLoggedInPlayer( char inAllowReconnect,
     numConnections ++;
                 
     LiveObject newObject;
+
+    // record player's custom map size
+    newObject.mMapD = connection->mMapD; 
 
     newObject.email = inEmail;
     newObject.origEmail = NULL;
@@ -14018,26 +14033,46 @@ int main() {
                         SimpleVector<char *> *tokens =
                             tokenizeString( message );
                         
+                        int playerMapD = MAP_D;
                         if( tokens->size() == 4 || tokens->size() == 5 ||
                             tokens->size() == 7 ) {
                             
+                            // login format: [mMapD@]email[:familyCode|\|spawnCode]
                             nextConnection->email = 
                                 stringDuplicate( 
                                     tokens->getElementDirect( 1 ) );
+                            nextConnection->mMapD = playerMapD;
 
+                            std::string mMapDAndEmail {tokens->getElementDirect( 1 )};
+                            //printf("email: %s, ", tokens->getElementDirect( 1 ));
+                            //printf("nextconnection->email: %s\n", nextConnection->email);
 
+                            const char mMapDelim = '@';
+                            const size_t mMapDelimPos = mMapDAndEmail.find( mMapDelim );
+                            //printf("mMapDelimPos: %d\n", mMapDelimPos);
+                            if ( mMapDelimPos != std::string::npos && mMapDelimPos <=3 ){
+                                playerMapD = std::stoi( mMapDAndEmail.substr(0, mMapDelimPos) );
+                                //printf("playerMapD: %d\n", playerMapD);
+                                if (playerMapD > MAX_MAP_D) playerMapD = MAP_D;
+
+                                std::string onlyEmail { mMapDAndEmail.substr( mMapDelimPos + 1 ) };
+                                delete[] nextConnection->email;
+                                nextConnection->email = stringDuplicate( onlyEmail.c_str() );
+                                nextConnection->mMapD = playerMapD;
+                                //printf("nMapD: %d\n", nextConnection->mMapD);
+                            }
+                            //printf("mMapD: %d\n", nextConnection->mMapD);
                             // If email contains string delimiter
                             // Set nextConnection's hashedSpawnSeed to hash of seed
                             // then cut off seed and set email to onlyEmail
                             const size_t minSeedLen = 1;
                             const char seedDelim = '|';
 
-
-                            std::string emailAndSeed { tokens->getElementDirect( 1 ) };
-
+                            std::string emailAndSeed { nextConnection->email };
                             const size_t seedDelimPos = emailAndSeed.find( seedDelim );
-
                             if( seedDelimPos != std::string::npos ) {
+                                
+
                                 const size_t seedLen = emailAndSeed.length() - seedDelimPos;
 
                                 if( seedLen > minSeedLen ) {
@@ -14239,7 +14274,7 @@ int main() {
                                             nextConnection,
                                             nextConnection->tutorialNumber,
                                             nextConnection->curseStatus,
-                                            nextConnection->fitnessScore );
+                                            nextConnection->fitnessScore);
                                             
                                         if( newID == -2 ) {
                                             nextConnection->error = true;
@@ -14933,7 +14968,10 @@ int main() {
                         // map chunks sent back to client absolute
                         // relative to center instead of birth pos
                         GridPos centerPos = { 0, 0 };
-                        
+                        int chunkDimensionX = nextPlayer->mMapD / 2;
+                        int chunkDimensionY =chunkDimensionX - 2;
+                        //printf("mx_startx: %d, mx_starty: %d, cx: %d, cy:%d\n",
+                            //m.x - chunkDimensionX / 2, m.y - chunkDimensionY / 2, chunkDimensionX, chunkDimensionY);
                         unsigned char *mapChunkMessage = 
                             getChunkMessage( m.x - chunkDimensionX / 2, 
                                              m.y - chunkDimensionY / 2,
@@ -23015,7 +23053,8 @@ int main() {
 
                 int playerXD = nextPlayer->xd;
                 int playerYD = nextPlayer->yd;
-                
+                int chunkDimensionX = nextPlayer->mMapD / 2;
+                int chunkDimensionY = chunkDimensionX - 2;
                 if( nextPlayer->heldByOther ) {
                     LiveObject *holdingPlayer = 
                         getLiveObject( nextPlayer->heldByOtherID );
@@ -23023,16 +23062,18 @@ int main() {
                     if( holdingPlayer != NULL ) {
                         playerXD = holdingPlayer->xd;
                         playerYD = holdingPlayer->yd;
-                        }
                     }
+                }
+                //printf("playerXD: %d, lastSentMapX: %d\n", playerXD, nextPlayer->lastSentMapX);
 
-
-                if( abs( playerXD - nextPlayer->lastSentMapX ) > 7
+                //printf("playerYD: %d, lastSentMapY: %d\n", playerYD, nextPlayer->lastSentMapY);
+                //printf("chunkX: %d, chunkY: %d\n", chunkDimensionX, chunkDimensionY);
+                if( abs( playerXD - nextPlayer->lastSentMapX ) > (chunkDimensionY / 4)
                     ||
-                    abs( playerYD - nextPlayer->lastSentMapY ) > 8 
+                    abs( playerYD - nextPlayer->lastSentMapY ) > (chunkDimensionX / 4)
                     ||
                     ! nextPlayer->firstMapSent ) {
-                
+                    //printf("sendMapChunkMessage: playerXD:%d, playerYD: %d\n", playerXD, playerYD);
                     // moving out of bounds of chunk, send update
                     // or player flagged as needing first map again
                     

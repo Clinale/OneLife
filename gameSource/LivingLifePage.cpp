@@ -60,8 +60,9 @@ static ObjectPickable objectPickable;
 #include "minitech.h"
 #include "newbieTips.h"
 
-#define MAP_D 64
-#define MAP_NUM_CELLS 4096
+// #define MAP_D 32
+// #define MAP_NUM_CELLS 1024
+static int MAP_NUM_CELLS;
 
 extern int versionNumber;
 extern int dataVersionNumber;
@@ -2765,7 +2766,8 @@ LivingLifePage::LivingLifePage()
           mGlobalMessageStartTime( 0 ),
           mFirstServerMessagesReceived( 0 ),
           mMapGlobalOffsetSet( false ),
-          mMapD( MAP_D ),
+          // mMapD is default set to 64
+          mMapD( SettingsManager::getIntSetting("customMapD", 64) ),
           mMapOffsetX( 0 ),
           mMapOffsetY( 0 ),
           mEKeyEnabled( false ),
@@ -2802,6 +2804,22 @@ LivingLifePage::LivingLifePage()
         mUsingSteam = true;
         }
 
+    // mMapD is not pow of 2
+    if ( mMapD & (mMapD - 1) ) {
+        // compute nearst number which is pow of 2
+        if (mMapD < 16) {
+            mMapD = 16;
+        }
+        else { // the bit of mMapD must be less than 8 bit
+            int temp = mMapD - 1;
+            temp |= temp >> 1;
+            temp |= temp >> 2;
+            temp |= temp >> 4;
+            mMapD = temp + 1;
+        }
+        SettingsManager::setSetting("customMapD", mMapD);
+    }
+    MAP_NUM_CELLS = mMapD * mMapD;
     mHomeSlipSprites[0] = mHomeSlipSprite;
     mHomeSlipSprites[1] = mHomeSlip2Sprite;
     
@@ -13727,6 +13745,9 @@ void LivingLifePage::step() {
             
             if( strlen( userEmail ) > 0 ) {
                 std::string seededEmail = std::string( userEmail );
+                // author: Clinale
+                // append the map size info to email
+                seededEmail = std::to_string(mMapD) + '@' + seededEmail ;
 
 				// If user doesn't have a seed or targetFamily in their email field
 				if( seededEmail.find('|') == std::string::npos &&
@@ -16329,7 +16350,7 @@ void LivingLifePage::step() {
                         }
                     
                     if( alreadyHeldAsPending ) {
-                        }
+                    }
                     else if( existing != NULL &&
                         existing->id != ourID &&
                         existing->currentSpeed != 0 &&
@@ -16410,8 +16431,8 @@ void LivingLifePage::step() {
                             existing->pendingReceivedMessages.push_back(
                                 autoSprintf( "PU\n%s\n#",
                                              lines[i] ) );
-                            }
                         }
+                    }
                     else if( existing != NULL &&
                              existing->heldByAdultID != -1 &&
                              getLiveObject( existing->heldByAdultID ) != NULL &&
@@ -16437,7 +16458,7 @@ void LivingLifePage::step() {
                             pendingReceivedMessages.push_back(
                                 autoSprintf( "PU\n%s\n#",
                                              lines[i] ) );
-                        }
+                    }
                     else if( existing != NULL &&
                              existing->heldByAdultPendingID != -1 &&
                              getLiveObject( existing->heldByAdultPendingID ) 
@@ -16465,7 +16486,7 @@ void LivingLifePage::step() {
                             pendingReceivedMessages.push_back(
                                 autoSprintf( "PU\n%s\n#",
                                              lines[i] ) );
-                        }
+                    }
                     else if( existing != NULL &&
                              responsiblePlayerID != -1 &&
                              getLiveObject( responsiblePlayerID ) != NULL &&
@@ -16490,7 +16511,7 @@ void LivingLifePage::step() {
                         rO->pendingReceivedMessages.push_back(
                             autoSprintf( "PU\n%s\n#",
                                          lines[i] ) );
-                        }         
+                    }         
                     else if( existing != NULL ) {
                         int oldHeld = existing->holdingID;
                         int heldContChanged = false;
@@ -17594,11 +17615,11 @@ void LivingLifePage::step() {
                                             getVectorFromCamera(
                                                 existing->xd,
                                                 existing->yd ) );
-                                        }
                                     }
                                 }
                             }
                         }
+                    }
                     else {    
                         o.displayChar = lastCharUsed + 1;
                     
@@ -17616,7 +17637,7 @@ void LivingLifePage::step() {
                             // locally yet.
                             unusedHolderID.push_back( o.id );
                             unusedHeldID.push_back( babyID );
-                            }
+                        }
 
                         o.curAnim = ground;
                         o.lastAnim = ground;
@@ -17672,7 +17693,7 @@ void LivingLifePage::step() {
                                        getVectorFromCamera( 
                                            o.currentPos.x,
                                            o.currentPos.y ) );
-                            }
+                        }
                         
                         // insert in age order, youngest last
                         double newAge = computeCurrentAge( &o );
@@ -17685,16 +17706,16 @@ void LivingLifePage::step() {
                                 recentInsertedGameObjectIndex = e;
                                 inserted = true;
                                 break;
-                                }
                             }
+                        }
                         if( ! inserted ) {
                             // they're all older than us
                             gameObjects.push_back( o );
                             recentInsertedGameObjectIndex = 
                                 gameObjects.size() - 1;
-                            }
                         }
                     }
+                }
                 else if( o.id == ourID && 
                          strstr( lines[i], "X X" ) != NULL  ) {
                     // we died
