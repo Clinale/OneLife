@@ -13673,6 +13673,10 @@ int main() {
 
                     delete sock;
                     sock = NULL;
+                    newConnection.error = true;
+                    AppLog:infoF("socket write error. msg_len: %d, write_len:%d", messageLength, numSent);
+                    nextConnection->errorCauseString = "socket write error";
+                    
                     }
                 else {
                     // first message sent okay
@@ -14066,7 +14070,7 @@ int main() {
                             // Set nextConnection's hashedSpawnSeed to hash of seed
                             // then cut off seed and set email to onlyEmail
                             const size_t minSeedLen = 1;
-                            const char seedDelim = '|';
+                            const char seedDelim = '|'; 
 
                             std::string emailAndSeed { nextConnection->email };
                             const size_t seedDelimPos = emailAndSeed.find( seedDelim );
