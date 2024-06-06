@@ -13674,8 +13674,8 @@ int main() {
                     delete sock;
                     sock = NULL;
                     newConnection.error = true;
-                    AppLog:infoF("socket write error. msg_len: %d, write_len:%d", messageLength, numSent);
-                    nextConnection->errorCauseString = "socket write error";
+                    AppLog::infoF("socket write error. msg_len: %d, write_len:%d", messageLength, numSent);
+                    newConnection->errorCauseString = "socket write error";
                     
                     }
                 else {
