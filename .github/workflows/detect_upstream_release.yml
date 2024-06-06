@@ -19,7 +19,7 @@ jobs:
           dataversion=$(curl --silent -f https://raw.githubusercontent.com/Clinale/OneLifeData7/master/dataVersionNumber.txt)
           if [ $? -ne 0 ]; then echo "Failed to fetch data version"; exit 1; fi
 
-          if [$jason -lt $dataversion ]; then jason="$dataversion"; fi
+          if [ $jason -lt $dataversion ]; then jason="$dataversion"; fi
 
           mine=$(curl --silent -f https://api.github.com/repos/Clinale/OneLife/releases/latest | jq -r .tag_name)
           if [ $? -ne 0 ]; then echo "Failed to fetch latest release version"; fi
