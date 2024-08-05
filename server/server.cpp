@@ -16306,6 +16306,7 @@ int main() {
                         int len = strlen( m.saidText );
                         
                         // replace not-allowed characters with spaces
+			/*
                         for( int c=0; c<len; c++ ) {
                             if( ! allowedSayCharMap[ 
                                     (int)( m.saidText[c] ) ] ) {
@@ -16313,7 +16314,7 @@ int main() {
                                 m.saidText[c] = ' ';
                                 }
                             }
-                        
+                        */ 
                         // now clean up gratuitous runs of spaces left behind
                         // by removed characters (or submitted by a wayward
                         // client)
