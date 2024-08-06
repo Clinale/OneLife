@@ -30,14 +30,9 @@ jobs:
           tag_name: v${{ inputs.version }}
           release_name: v${{ inputs.version }}
           body: |
-            Update to v${{ inputs.version }}.
-
-            This is for Two Hours One Life v${{ inputs.version }}.
+            无尽人生版本 v${{ inputs.version }}.
             
-            升級到 v${{ inputs.version }}。
-            
-            這對應到 Two Hours One Life v${{ inputs.version }}。
-            如何安裝：
+            如何安装：
             https://github.com/Clinale/miniOneLifeCompile.git
       - name: upload windows #Windows
         uses: actions/upload-release-asset@v1
