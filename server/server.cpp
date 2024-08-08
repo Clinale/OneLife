@@ -4124,7 +4124,7 @@ static SocketPoll sockPoll;
 
 
 static void setPlayerDisconnected( LiveObject *inPlayer, 
-                                   const char *inReason ) {    
+                                   const char *inReason, const char* func, int line ) {    
     /*
     setDeathReason( inPlayer, "disconnected" );
     
@@ -4135,8 +4135,8 @@ static void setPlayerDisconnected( LiveObject *inPlayer,
     
     // just mark them as not connected
 
-    AppLog::infoF( "Player %d (%s) marked as disconnected (%s).",
-                   inPlayer->id, inPlayer->email, inReason );
+    AppLog::infoF( "Player %d (%s) marked as disconnected (%s) in func (%s:%d)",
+                   inPlayer->id, inPlayer->email, inReason, func, line );
     inPlayer->connected = false;
 
     // when player reconnects, they won't get a force PU message
@@ -4211,7 +4211,7 @@ void sendGlobalMessage( char *inMessage,
                 o->lastGlobalMessageTime = curTime;
                 
                 if( numSent != len ) {
-                    setPlayerDisconnected( o, "Socket write failed" );
+                    setPlayerDisconnected( o, "Socket write failed",  __func__  , __LINE__);
                     }
                 }
             else {
@@ -4557,7 +4557,7 @@ int sendMapChunkMessage( LiveObject *inO,
         inO->lastSentMapY = yd;
         }
     else {
-        setPlayerDisconnected( inO, "Socket write failed" );
+        setPlayerDisconnected( inO, "Socket write failed",  __func__ , __LINE__);
         }
     return numSent;
     }
@@ -6967,7 +6967,7 @@ int processLoggedInPlayer( char inAllowReconnect,
             o->connected && 
             strcmp( o->email, inEmail ) == 0 ) {
             
-            setPlayerDisconnected( o, "Authentic reconnect received" );
+            setPlayerDisconnected( o, "Authentic reconnect received", __func__, __LINE__ );
             
             break;
             }
@@ -10381,7 +10381,7 @@ void sendMessageToPlayer( LiveObject *inPlayer,
                               false, false );
         
     if( numSent != len ) {
-        setPlayerDisconnected( inPlayer, "Socket write failed" );
+        setPlayerDisconnected( inPlayer, "Socket write failed",  __func__ , __LINE__);
         }
 
     inPlayer->gotPartOfThisFrame = true;
@@ -10807,7 +10807,7 @@ void apocalypseStep() {
                     
                     if( numSent != messageLength ) {
                         setPlayerDisconnected( nextPlayer, 
-                                               "Socket write failed" );
+                                               "Socket write failed",  __func__ , __LINE__);
                         }
                     }
                 }
@@ -10935,7 +10935,7 @@ void apocalypseStep() {
                     
                             if( numSent != messageLength ) {
                                 setPlayerDisconnected( nextPlayer, 
-                                                       "Socket write failed" );
+                                                       "Socket write failed"  ,__func__ , __LINE__);
                                 }
                             }
                         }
@@ -10990,7 +10990,7 @@ void monumentStep() {
                 delete [] message;
 
                 if( numSent != messageLength ) {
-                    setPlayerDisconnected( nextPlayer, "Socket write failed" );
+                    setPlayerDisconnected( nextPlayer, "Socket write failed",  __func__ , __LINE__);
                     }
                 }
             }
@@ -14842,7 +14842,7 @@ int main() {
                     readSocketFull( nextPlayer->sock, nextPlayer->sockBuffer );
             
                 if( ! result ) {
-                    setPlayerDisconnected( nextPlayer, "Socket read failed" );
+                    setPlayerDisconnected( nextPlayer, "Socket read failed",__func__, __LINE__ );
                     }
                 else {
                     // don't even bother parsing message buffer for players
@@ -14995,7 +14995,7 @@ int main() {
 
                         if( numSent != length ) {
                             setPlayerDisconnected( nextPlayer, 
-                                                   "Socket write failed" );
+                                                   "Socket write failed" , __func__ , __LINE__);
                             }
                         }
                     else {
@@ -23259,7 +23259,7 @@ int main() {
 
                     if( numSent != dyingMessageLength ) {
                         setPlayerDisconnected( nextPlayer, 
-                                               "Socket write failed" );
+                                               "Socket write failed"  ,__func__ , __LINE__);
                         }
                     }
 
@@ -23276,7 +23276,7 @@ int main() {
                     
                     if( numSent != healingMessageLength ) {
                         setPlayerDisconnected( nextPlayer, 
-                                               "Socket write failed" );
+                                               "Socket write failed"  ,__func__ , __LINE__);
                         }
                     }
 
@@ -23293,7 +23293,7 @@ int main() {
                     
                     if( numSent != emotMessageLength ) {
                         setPlayerDisconnected( nextPlayer, 
-                                               "Socket write failed" );
+                                               "Socket write failed",  __func__ , __LINE__);
                         }
                     }
 
@@ -23413,7 +23413,7 @@ int main() {
                             
                             if( numSent != updateMessageLength ) {
                                 setPlayerDisconnected( nextPlayer, 
-                                                       "Socket write failed" );
+                                                       "Socket write failed",  __func__ , __LINE__);
                                 }
                             }
                         }
@@ -23495,7 +23495,7 @@ int main() {
                             
                             if( numSent != moveMessageLength ) {
                                 setPlayerDisconnected( nextPlayer, 
-                                                       "Socket write failed" );
+                                                       "Socket write failed" , __func__, __LINE__ );
                                 }
                             }
                         }
@@ -23562,7 +23562,7 @@ int main() {
 
                     if( numSent != outOfRangeMessageLength ) {
                         setPlayerDisconnected( nextPlayer, 
-                                               "Socket write failed" );
+                                               "Socket write failed" , __func__, __LINE__ );
                         }
                     }
 
@@ -23661,7 +23661,7 @@ int main() {
 
                             if( numSent != mapChangeMessageLength ) {
                                 setPlayerDisconnected( nextPlayer, 
-                                                       "Socket write failed" );
+                                                       "Socket write failed" , __func__ , __LINE__);
                                 }
                             }
                         }
@@ -23940,7 +23940,7 @@ int main() {
                         
                         if( numSent != messageLen ) {
                             setPlayerDisconnected( nextPlayer, 
-                                                   "Socket write failed" );
+                                                   "Socket write failed",  __func__ , __LINE__);
                             }
                         }
                     }
@@ -24025,7 +24025,7 @@ int main() {
                         
                         if( numSent != len ) {
                             setPlayerDisconnected( nextPlayer, 
-                                                   "Socket write failed" );
+                                                   "Socket write failed",  __func__ , __LINE__);
                             }
                         }
                     }
@@ -24092,7 +24092,7 @@ int main() {
                     
                         if( numSent != deleteUpdateMessageLength ) {
                             setPlayerDisconnected( nextPlayer, 
-                                                   "Socket write failed" );
+                                                   "Socket write failed",  __func__ , __LINE__);
                             }
                         }
                     }
@@ -24111,7 +24111,7 @@ int main() {
                     
                     if( numSent != lineageMessageLength ) {
                         setPlayerDisconnected( nextPlayer, 
-                                               "Socket write failed" );
+                                               "Socket write failed",  __func__ , __LINE__);
                         }
                     }
 
@@ -24128,7 +24128,7 @@ int main() {
                     
                     if( numSent != cursesMessageLength ) {
                         setPlayerDisconnected( nextPlayer, 
-                                               "Socket write failed" );
+                                               "Socket write failed" , __func__ , __LINE__);
                         }
                     }
 
@@ -24144,7 +24144,7 @@ int main() {
                     
                     if( numSent != namesMessageLength ) {
                         setPlayerDisconnected( nextPlayer, 
-                                               "Socket write failed" );
+                                               "Socket write failed",  __func__ , __LINE__);
                         }
                     }
 
@@ -24215,7 +24215,7 @@ int main() {
                         
                         if( numSent != messageLength ) {
                             setPlayerDisconnected( nextPlayer, 
-                                                   "Socket write failed" );
+                                                   "Socket write failed",  __func__ , __LINE__);
                             }
                         
                         delete [] foodMessage;
@@ -24248,7 +24248,7 @@ int main() {
                     
                     if( numSent != messageLength ) {
                         setPlayerDisconnected( nextPlayer, 
-                                               "Socket write failed" );
+                                               "Socket write failed",  __func__ , __LINE__);
                         }
                     
                     delete [] heatMessage;
@@ -24277,7 +24277,7 @@ int main() {
                     
                     if( numSent != messageLength ) {
                         setPlayerDisconnected( nextPlayer, 
-                                               "Socket write failed" );
+                                               "Socket write failed",  __func__, __LINE__);
                         }
                     
                     delete [] tokenMessage;                    
@@ -24391,7 +24391,7 @@ int main() {
                         false, false );
 
                 if( numSent != frameMessageLength ) {
-                    setPlayerDisconnected( nextPlayer, "Socket write failed" );
+                    setPlayerDisconnected( nextPlayer, "Socket write failed",  __func__ , __LINE__);
                     }
                 }
             nextPlayer->gotPartOfThisFrame = false;

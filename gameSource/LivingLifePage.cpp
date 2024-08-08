@@ -14786,7 +14786,7 @@ void LivingLifePage::step() {
                     int mapCenterY = y + sizeY / 2;
                     int mapCenterX = x + sizeX / 2;
                     printf( "Map center = %d,%d\n", mapCenterX, mapCenterY );
-                    
+                    printf("mFirstServerMessagesReceived: %d\n", mFirstServerMessagesReceived);
                     for( int mapY=0; mapY < mMapD; mapY++ ) {
                         for( int mapX=0; mapX < mMapD; mapX++ ) {
                         
@@ -18106,6 +18106,7 @@ void LivingLifePage::step() {
                 }
             
             mFirstServerMessagesReceived |= 2;
+            printf("mFirstServerMessagesReceived: %d\n", mFirstServerMessagesReceived);
             }
         else if( type == PLAYER_MOVES_START ) {
             
