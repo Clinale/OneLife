@@ -2819,6 +2819,7 @@ LivingLifePage::LivingLifePage()
         }
         SettingsManager::setSetting("customMapD", mMapD);
     }
+    printf("mMapD: %d\n",mMapD);
     MAP_NUM_CELLS = mMapD * mMapD;
     mHomeSlipSprites[0] = mHomeSlipSprite;
     mHomeSlipSprites[1] = mHomeSlip2Sprite;
@@ -6431,6 +6432,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
     else if( mFirstServerMessagesReceived == 3 ) {
         if( !mDoneLoadingFirstObjectSet ) {
             stillWaitingBirth = true;
+            printf("stillWaitingBirth.......\n");
             }
         }
 
@@ -20938,6 +20940,7 @@ void LivingLifePage::step() {
     if( mFirstServerMessagesReceived == 3 ) {
 
         if( mStartedLoadingFirstObjectSet && ! mDoneLoadingFirstObjectSet ) {
+            printf("start loading first object set...\n");
             mDoneLoadingFirstObjectSet = 
                 isLiveObjectSetFullyLoaded( &mFirstObjectSetLoadingProgress );
             

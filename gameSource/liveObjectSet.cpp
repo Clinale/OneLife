@@ -237,6 +237,8 @@ void finalizeLiveObjectSet() {
 
 char isLiveObjectSetFullyLoaded( float *outProgress ) {
     
+    SimpleVector<int> unloadSpriteSet;
+    SimpleVector<int> unloadSoundSet;
     int numDone = 0;
 
     int numSprites = liveSpriteSet.size();
@@ -246,8 +248,12 @@ char isLiveObjectSetFullyLoaded( float *outProgress ) {
         
         if( markSpriteLive( id ) ) {
             numDone ++;
-            }
         }
+        else {
+            unloadSpriteSet.push_back(id);
+        }
+    }
+        
 
     int numSounds = liveSoundSet.size();
     for( int i=0; i<numSounds; i++ ) {
@@ -256,13 +262,24 @@ char isLiveObjectSetFullyLoaded( float *outProgress ) {
         
         if( markSoundLive( id ) ) {
             numDone ++;
-            }
         }
+        else {
+            unloadSoundSet.push_back(id);
+        }
+    }
 
     int numTotal = numSprites + numSounds;
 
     *outProgress = (float)numDone / (float)numTotal;
-
+    printf("load first object set: total: %d, numDone:%d\n", numTotal, numDone);
+    printf("unload sprites IDs:\n");
+    for (int i=0; i < unloadSpriteSet.size(); i++){
+        printf("%d\n", unloadSpriteSet.getElementDirect(i));
+    }
+    printf("unload sound IDs:\n");
+    for (int i=0; i<unloadSoundSet.size(); i++){
+        printf("%d\n", unloadSoundSet.getElementDirect(i));
+    }
     return ( numDone == numTotal );
     }
 
