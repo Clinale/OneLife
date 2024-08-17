@@ -30,7 +30,8 @@ TextField::TextField( Font *inDisplayFont,
                       char inForceCaps,
                       const char *inLabelText,
                       const char *inAllowedChars,
-                      const char *inForbiddenChars )
+                      const char *inForbiddenChars,
+                      char inUsePasteShortcut)
         : PageComponent( inX, inY ),
           mActive( true ),
           mContentsHidden( false ),
@@ -58,7 +59,7 @@ TextField::TextField( Font *inDisplayFont,
           mSelectionEnd( -1 ),
           mShiftPlusArrowsCanSelect( false ),
           mCursorFlashSteps( 0 ),
-          mUsePasteShortcut( false ) {
+          mUsePasteShortcut( inUsePasteShortcut ) {
     
     if( inLabelText != NULL ) {
         mLabelText = stringDuplicate( inLabelText );
@@ -70,7 +71,7 @@ TextField::TextField( Font *inDisplayFont,
     if( inForbiddenChars != NULL ) {
         mForbiddenChars = stringDuplicate( inForbiddenChars );
         }
-
+    
     clearArrowRepeat();
         
 

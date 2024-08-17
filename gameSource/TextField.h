@@ -27,7 +27,8 @@ class TextField : public PageComponent, public ActionListenerList {
                    char inForceCaps = false,
                    const char *inLabelText = NULL,
                    const char *inAllowedChars = NULL,
-                   const char *inForbiddenChars = NULL );
+                   const char *inForbiddenChars = NULL ,
+                   char inUsePasteShortcut = false);
 
         virtual ~TextField();
         
