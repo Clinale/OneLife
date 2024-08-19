@@ -4,7 +4,7 @@
 
 #include "minorGems/game/Font.h"
 #include "minorGems/ui/event/ActionListenerList.h"
-
+#include "minorGems/util/SimpleVector.h"
 #include "PageComponent.h"
 
 
@@ -74,7 +74,7 @@ class TextField : public PageComponent, public ActionListenerList {
 
         // at current cursor position, or replacing current selection
         void insertCharacter( unsigned char inASCII );
-        void insertString( char *inString );
+        void insertString(const char *inString );
         
         
         // controls whether arrow keys have an effect on cursor or not
@@ -224,6 +224,9 @@ class TextField : public PageComponent, public ActionListenerList {
         char *mText;
         int mTextLen;
         
+
+        SimpleVector<int> mCharDict = SimpleVector<int> (128); //用于记录每个unicode字符在utf8数组中的位置
+
         int mCursorPosition;
         
         char mIgnoreArrowKeys;
@@ -267,12 +270,15 @@ class TextField : public PageComponent, public ActionListenerList {
         void rightHit();
         
         void clearArrowRepeat();
-        
-        
+
+        // returns 0 if character completely forbidden by field rules
+        //unicode processCharacter(unicode ch);
+
         // returns 0 if character completely forbidden by field rules
         unsigned char processCharacter( unsigned char inASCII );
         
-        
+        int getElementBeforeNumber(int val);
+        void insertCharIndex(int val);
 
         // clever (!) way of handling focus?
 
