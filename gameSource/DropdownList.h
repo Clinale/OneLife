@@ -34,15 +34,15 @@ class DropdownList : public PageComponent, public ActionListenerList {
         void setContentsHidden( char inHidden );
         
 
-		void setList( const char *inText  );
+		void setList( const unicode *inText  );
 		char *getAndUpdateList();
 
         // copied internally
-        void setText( const char *inText );
+        void setText( const unicode *inText );
         
 
         // destroyed by caller
-        char *getText();
+        unicode *getText();
 		
 		
 		void selectOption( int index );
@@ -73,8 +73,8 @@ class DropdownList : public PageComponent, public ActionListenerList {
 
 
         // at current cursor position, or replacing current selection
-        void insertCharacter( unsigned char inASCII );
-        void insertString( char *inString );
+        void insertCharacter( unicode inASCII );
+        void insertString( unicode *inString );
         
         
         // controls whether arrow keys have an effect on cursor or not
@@ -137,11 +137,11 @@ class DropdownList : public PageComponent, public ActionListenerList {
 		virtual void pointerDown( float inX, float inY );
         virtual void pointerUp( float inX, float inY );
 
-        virtual void keyDown( unsigned char inASCII );
-        virtual void keyUp( unsigned char inASCII );
+        virtual void keyDown( unicode inUnicode );
+        virtual void keyUp( unicode inUnicode );
         
-        virtual void specialKeyDown( int inKeyCode );
-        virtual void specialKeyUp( int inKeyCode );
+        virtual void specialKeyDown( unicode inKeyCode );
+        virtual void specialKeyUp( unicode inKeyCode );
         
         
         virtual char isMouseOver();
@@ -186,10 +186,10 @@ class DropdownList : public PageComponent, public ActionListenerList {
         char mFireOnLeave;
         char mForceCaps;
 
-        char *mLabelText;
+        unicode *mLabelText;
         
-        char *mAllowedChars;
-        char *mForbiddenChars;
+        unicode *mAllowedChars;
+        unicode *mForbiddenChars;
 
         char mHover;
         
@@ -202,7 +202,7 @@ class DropdownList : public PageComponent, public ActionListenerList {
         
         
 
-        char *mRawText;
+        unicode *mRawText;
 		int listLen;
 		
 		int hoverIndex;
@@ -216,7 +216,7 @@ class DropdownList : public PageComponent, public ActionListenerList {
         
         char mFocused;
         
-        char *mText;
+        unicode *mText;
         int mTextLen;
         
         int mCursorPosition;
@@ -225,7 +225,7 @@ class DropdownList : public PageComponent, public ActionListenerList {
         char mIgnoreMouse;
         
         
-        char *mDrawnText;
+        unicode *mDrawnText;
         // position of cursor within text that is actually drawn
         int mCursorDrawPosition;
         // leftmost x position of drawn text
@@ -265,7 +265,7 @@ class DropdownList : public PageComponent, public ActionListenerList {
         
         
         // returns 0 if character completely forbidden by field rules
-        unsigned char processCharacter( unsigned char inASCII );
+        unicode processCharacter( unicode inUnicode );
         
         
 

@@ -22,7 +22,8 @@ extern double frameRateFactor;
 int TextField::sDeleteFirstDelaySteps = 30 / frameRateFactor;
 int TextField::sDeleteNextDelaySteps = 2 / frameRateFactor;
 
-
+// output should have the size of utf8String
+extern void utf8ToUnicode(const char *utf8String, unicode* const output);
 
 
 TextField::TextField( Font *inDisplayFont, 

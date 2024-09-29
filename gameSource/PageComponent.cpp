@@ -31,7 +31,7 @@ void PageComponent::setParent( PageComponent *inParent ) {
 
 
 
-void PageComponent::setToolTip( const char *inTip ) {
+void PageComponent::setToolTip( unicode *inTip ) {
     if( mParent != NULL && mCursorTip == NULL ) {
         mParent->setToolTip( inTip );
         }
@@ -39,7 +39,7 @@ void PageComponent::setToolTip( const char *inTip ) {
 
 
 
-void PageComponent::clearToolTip( const char *inTipToClear ) {
+void PageComponent::clearToolTip( unicode *inTipToClear ) {
     if( mParent != NULL ) {
         mParent->clearToolTip( inTipToClear );
         }
@@ -57,7 +57,7 @@ void PageComponent::base_step(){
         }
     
     step();
-    }
+}
 
 
 doublePair pointerPos = { 0, 0 };
@@ -76,7 +76,7 @@ void PageComponent::base_draw( doublePair inViewCenter,
         if( c->isVisible() ) {
             c->base_draw( inViewCenter, inViewSize );
             }
-        }
+    }
 
     draw();
     
@@ -107,17 +107,17 @@ void PageComponent::base_draw( doublePair inViewCenter,
         
         setDrawColor( 1, 1, 1, 1.0 );
         tinyHandwritingFont->drawString( mCursorTip, pos, alignLeft );
-        }
+    }
 
     setViewCenterPosition( oldViewCenter.x, oldViewCenter.y );
-    }
+}
 
 
 
 void PageComponent::setPosition( double inX, double inY ) {
     mX = inX;
     mY = inY;
-    }
+}
 
 
 
@@ -151,9 +151,9 @@ void PageComponent::setIgnoreEvents( char inIgnoreEvents ) {
     }
     
     
-void PageComponent::setCursorTip( const char *inTip ) {
+void PageComponent::setCursorTip( unicode *inTip ) {
     mCursorTip = inTip;
-    }
+}
 
 
 
@@ -164,7 +164,7 @@ void PageComponent::base_pointerMove( float inX, float inY ){
     // Displaying cursor tips even when mIgnoreEvents is true
     if( mIgnoreEvents && mCursorTip == NULL ) {
         return;
-        }
+    }
     
     inX -= mX;
     inY -= mY;
@@ -271,7 +271,7 @@ void PageComponent::base_pointerUp( float inX, float inY ){
 
 
 
-void PageComponent::base_keyDown( unsigned char inASCII ){
+void PageComponent::base_keyDown( unicode inUnicode ){
     if( mIgnoreEvents ) {
         return;
         }
@@ -280,30 +280,30 @@ void PageComponent::base_keyDown( unsigned char inASCII ){
         PageComponent *c = *( mComponents.getElement( i ) );
     
         if( c->isVisible() && c->isActive() ) {
-            c->base_keyDown( inASCII );
+            c->base_keyDown( inUnicode );
             }
         }
 
-    keyDown( inASCII );
+    keyDown( inUnicode );
     }
 
 
         
-void PageComponent::base_keyUp( unsigned char inASCII ){
+void PageComponent::base_keyUp( unicode inUnicode ){
     for( int i=0; i<mComponents.size(); i++ ) {
         PageComponent *c = *( mComponents.getElement( i ) );
     
         if( c->isVisible() && c->isActive() ) {
-            c->base_keyUp( inASCII );
+            c->base_keyUp( inUnicode );
             }
         }
 
-    keyUp( inASCII );
+    keyUp( inUnicode );
     }
 
 
 
-void PageComponent::base_specialKeyDown( int inKeyCode ){
+void PageComponent::base_specialKeyDown( unicode inKeyCode ){
     if( mIgnoreEvents ) {
         return;
         }
@@ -321,7 +321,7 @@ void PageComponent::base_specialKeyDown( int inKeyCode ){
 
 
 
-void PageComponent::base_specialKeyUp( int inKeyCode ){
+void PageComponent::base_specialKeyUp( unicode inKeyCode ){
     for( int i=0; i<mComponents.size(); i++ ) {
         PageComponent *c = *( mComponents.getElement( i ) );
     

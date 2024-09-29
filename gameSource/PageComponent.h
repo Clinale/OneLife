@@ -10,6 +10,7 @@
 
 #include "minorGems/game/Font.h"
 
+typedef unsigned short unicode;
 
 class PageComponent : public GUIComponent {
     public:
@@ -73,13 +74,13 @@ class PageComponent : public GUIComponent {
 
         void base_pointerUp( float inX, float inY );
 
-        virtual void base_keyDown( unsigned char inASCII );
+        virtual void base_keyDown( unicode inUnicode );
         
-        void base_keyUp( unsigned char inASCII );
+        void base_keyUp( unicode  inUnicode);
 
-        void base_specialKeyDown( int inKeyCode );
+        void base_specialKeyDown( unicode inKeyCode );
 
-        void base_specialKeyUp( int inKeyCode );
+        void base_specialKeyUp( unicode inKeyCode );
 
         
         void base_clearState();
@@ -102,10 +103,10 @@ class PageComponent : public GUIComponent {
 
 
         // inTip destroyed by caller, or NULL to clear
-        virtual void setToolTip( const char *inTip );
+        virtual void setToolTip( unicode *inTip );
 
         // clears a specific tool tip---only if this tip is still showing
-        virtual void clearToolTip( const char *inTipToClear );
+        virtual void clearToolTip( unicode *inTipToClear );
         
 
         // clears hover or partially-pressed status
@@ -134,16 +135,16 @@ class PageComponent : public GUIComponent {
         virtual void pointerUp( float inX, float inY ) {
             };
 
-        virtual void keyDown( unsigned char inASCII ) {
+        virtual void keyDown( unicode inUnicode ) {
             };
         
-        virtual void keyUp( unsigned char inASCII ) {
+        virtual void keyUp( unicode inUnicode ) {
             };
 
-        virtual void specialKeyDown( int inKeyCode ) {
+        virtual void specialKeyDown( unicode inKeyCode ) {
             };
 
-        virtual void specialKeyUp( int inKeyCode ) {
+        virtual void specialKeyUp( unicode inKeyCode ) {
             };
         
 
@@ -187,7 +188,7 @@ class PageComponent : public GUIComponent {
 
         PageComponent *mMouseEventHog;
         
-        const char *mCursorTip;
+        const unicode *mCursorTip;
 
     };
 

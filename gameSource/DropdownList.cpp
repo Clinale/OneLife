@@ -46,13 +46,13 @@ DropdownList::DropdownList( Font *inDisplayFont,
           
           mHover( false ),
 		  
-		  mRawText( new char[1] ),
+		  mRawText( new unicode[1] ),
 		  hoverIndex( -1 ),
 		  nearRightEdge( 0 ),
 		  mUseClearButton( false ),
 		  onClearButton( false ),
 		  
-          mFocused( false ), mText( new char[1] ),
+          mFocused( false ), mText( new unicode[1] ),
           mTextLen( 0 ),
           mCursorPosition( 0 ),
           mIgnoreArrowKeys( false ),
@@ -69,15 +69,21 @@ DropdownList::DropdownList( Font *inDisplayFont,
           mUsePasteShortcut( false ) {
     
     if( inLabelText != NULL ) {
-        mLabelText = stringDuplicate( inLabelText );
-        }
+        //mLabelText = stringDuplicate( inLabelText );
+        mLabelText = new unicode[strlen(inLabelText) + 1];
+        utf8ToUnicode(inLabelText, mLabelText);
+    }
     
     if( inAllowedChars != NULL ) {
-        mAllowedChars = stringDuplicate( inAllowedChars );
-        }
+        //mAllowedChars = stringDuplicate( inAllowedChars );
+        mAllowedChars = new unicode[strlen(inAllowedChars) + 1];
+        utf8ToUnicode(inAllowedChars, mAllowedChars);
+    }
     if( inForbiddenChars != NULL ) {
-        mForbiddenChars = stringDuplicate( inForbiddenChars );
-        }
+        //mForbiddenChars = stringDuplicate( inForbiddenChars );
+        mForbiddenChars = new unicode[strlen(inForbiddenChars) + 1];
+        utf8ToUnicode(inForbiddenChars, mForbiddenChars);
+    }
 
     clearArrowRepeat();
         
@@ -88,35 +94,48 @@ DropdownList::DropdownList( Font *inDisplayFont,
 
     mHigh = mFont->getFontHeight() + 2 * mBorderWide;
 
-    char *fullString = new char[ mCharsWide + 1 ];
+    unicode *fullString = new unicode[ mCharsWide + 1 ];
 
-    unsigned char widestChar = 0;
+    unicode widestChar = 0;
     double width = 0;
 
+    unicode* measureText = L"你好，世界！";
+    for (int i=0; i<6; i++){
+        unicode s[2];
+        s[0] = measureText[i];
+        s[1] = 0;
+        double thisWidth = mFont->measureString( s );
+            
+        if( thisWidth > width ) {
+            width = thisWidth;
+            widestChar = measureText[i];    
+        }
+    }
+    /*
     for( int c=32; c<128; c++ ) {
-        unsigned char pc = processCharacter( c );
+        unicode pc = processCharacter( c );
 
         if( pc != 0 ) {
-            char s[2];
+            unicode s[2];
             s[0] = pc;
-            s[1] = '\0';
+            s[1] = 0;
 
             double thisWidth = mFont->measureString( s );
             
             if( thisWidth > width ) {
                 width = thisWidth;
                 widestChar = pc;    
-                }
             }
         }
-    
+    }
+    */
     
 
 
     for( int i=0; i<mCharsWide; i++ ) {
         fullString[i] = widestChar;
-        }
-    fullString[ mCharsWide ] = '\0';
+    }
+    fullString[ mCharsWide ] =  0;
     
     double fullStringWidth = mFont->measureString( fullString );
 
@@ -126,7 +145,7 @@ DropdownList::DropdownList( Font *inDisplayFont,
     
     mDrawnTextX = - ( mWide / 2 - mBorderWide );
 
-    mText[0] = '\0';
+    mText[0] = 0;
     }
 
 
@@ -168,91 +187,60 @@ void DropdownList::setContentsHidden( char inHidden ) {
 
 
 
-void DropdownList::setList( const char *inText ) {
+void DropdownList::setList( const unicode *inText ) {
     delete [] mRawText;
 
     // obeys same rules as typing (skip blocked characters)
-    SimpleVector<char> filteredText;
-    
-    int length = strlen( inText );
-    for( int i=0; i<length; i++ ) {
-        unsigned char processedChar = processCharacter( inText[i] );
+    int length = wcslen(inText);
+    unicode* filteredText = new unicode[length+1];
+    int index = 0;
+    for( int i=0; i< length; i++ ) {
+        unicode processedChar = processCharacter( inText[i] );
         
         if( processedChar != 0 ) {
-            filteredText.push_back( processedChar );
+            filteredText[index++] = processedChar ;
+        }
+    }
+    filteredText[index] = 0;
+	int numLines;
+	unicode **lines = split( filteredText, (unicode)"\n", &numLines );
+	
+	mRawText = filteredText;
+	
+    removeExtraNewlinesAndWhiteSpace(mRawText);
+	int firstLineIndex = 0;
+    listLen = 0;
+    for (int i=0; mRawText[i] != 0; i++) {
+        if (mRawText[i] == (unicode)'\n') {
+            listLen ++;
+            if (firstLineIndex == 0){
+                firstLineIndex = i;
             }
         }
-    
-	char *rawStringWithEmptyLines = filteredText.getElementString();
-	int numLines;
-	char **lines = split( rawStringWithEmptyLines, "\n", &numLines );
-	delete [] rawStringWithEmptyLines;
-	
-	mRawText = strdup("");
-	
-	for( int i=0; i<numLines; i++ ) {
-		
-		if( i == 0 ) setText( lines[i] );
-		
-		if( strcmp( lines[i], "" ) != 0 ) {
-			mRawText = concatonate( mRawText, lines[i] );
-			mRawText = concatonate( mRawText, "\n" );
-			}
-		
-		delete [] lines[i];
-		}
-	delete [] lines;
-	
-	mRawText = trimWhitespace( mRawText );
-	lines = split( mRawText, "\n", &numLines );
-	listLen = numLines;
-	
-	for( int i=0; i<numLines; i++ ) {
-		delete [] lines[i];
-		}
-	delete [] lines;
-	
     }
+    listLen += 1; // 一共有这么多行文本
+
+    // 设置mText为第一行文本内容
+    delete [] mText;
+    mText = new unicode [firstLineIndex+1];
+    memcpy(mText, mRawText, (firstLineIndex - 1)*sizeof(unicode));
+    mText[firstLineIndex] = '\0';
+}
 
 
-
-char *DropdownList::getAndUpdateList() {
+// 将mText放在mRawText开头
+unicode *DropdownList::getAndUpdateList() {
 	
-	char *newList = strdup("");
-    listLen = 0;
-	
-	if( strcmp( mRawText, "" ) != 0 ) {
-		int numLines;
-		char **lines = split( mRawText, "\n", &numLines );
-        listLen = numLines;
-		
-		for( int i=0; i<numLines; i++ ) {
-			if( strcmp( mText, lines[i] ) != 0 ) {
-				newList = concatonate( newList, "\n" );
-				newList = concatonate( newList, lines[i] );
-				}
-            else {
-                listLen -= 1;
-                }
-			delete [] lines[i];
-			}
-		delete [] lines;
-		
-		newList = trimWhitespace( newList );
-		if( strcmp( newList, "" ) != 0 ) newList = concatonate( "\n", newList );
-		}
-	
-    if( strcmp( mRawText, "" ) != 0 ) listLen += 1;
-	newList = concatonate( mText, newList );
-	
-	delete [] mRawText;
-	mRawText = stringDuplicate( trimWhitespace( newList ) );
-	
-	return stringDuplicate( newList );
+	unicode* result = wcsstr(mRawText, mText);
+    if (result != NULL){
+        int d = result - mRawText;
+        rotateUnicodeString(mRawText, d);
     }
+	return stringDuplicate( mRawText );
+}
 	
 	
-void DropdownList::setText( const char *inText ) {
+void DropdownList::setText( const unicode *inText ) {
     delete [] mText;
     
     mSelectionStart = -1;
@@ -260,58 +248,63 @@ void DropdownList::setText( const char *inText ) {
     
 	mText = stringDuplicate( inText );
 	
-    mTextLen = strlen( mText );
+    mTextLen = wcslen( mText );
     
-    mCursorPosition = strlen( mText );
+    mCursorPosition = mTextLen;
 
     // hold-downs broken
     mHoldDeleteSteps = -1;
     mFirstDeleteRepeatDone = false;
 
     clearArrowRepeat();
-    }
+}
 	
-char *DropdownList::getText() {
+unicode *DropdownList::getText() {
 	return stringDuplicate( mText );
-	}
+}
 	
 void DropdownList::selectOption( int index ) {	
 	if( index < 0 || index >= listLen ) return;
-	
-	int numLines;
-	char **lines = split( mRawText, "\n", &numLines );
-	setText( lines[index] );
-	
-	for( int i=0; i<numLines; i++ ) {
-		delete [] lines[i];
-		}
-	delete [] lines;
-	}
+	unicode* start = mRawText;
+    while (--index > 0) {
+        start = wcsstr(start, L"\n");
+        if (start == NULL) {
+            printf("Error in DropDownList::selectOption: index(%d) listLen(%d)\n", index, listLen);
+            exit(-1);
+        }
+    }
+    unicode* end = wcsstr(start, L"\n");
+    if (end == NULL) {
+        setText(start);
+    } else {
+        delete [] mText;
+        int length = end - start+1;
+        mText = new unicode[length];
+        memcpy(mText, start, sizeof(unicode)*(length-1));
+        mText[length] = 0;
+    }
+}
 	
 void DropdownList::deleteOption( int index ) {
 	if( index < 0 || index >= listLen ) return;
-	
-	int numLines;
-	char **lines = split( mRawText, "\n", &numLines );
-	
-	delete [] mRawText;
-	mRawText = strdup("");
-	
-	for( int i=0; i<numLines; i++ ) {
-		
-		if( i != index ) {
-			mRawText = concatonate( mRawText, lines[i] );
-			if( i < numLines - 1 ) mRawText = concatonate( mRawText, "\n" );
-			}
-		
-		delete [] lines[i];
-		}
-	delete [] lines;
-	
-	mRawText = trimWhitespace( mRawText );
+	unicode* start = mRawText;
+    while (--index > 0) {
+        start = wcsstr(start, L"\n");
+        if (start == NULL) {
+            printf("Error in DropDownList::selectOption: index(%d) listLen(%d)\n", index, listLen);
+            exit(-1);
+        }
+    }
+    unicode* end = wcsstr(start, L"\n");
+	if (end == NULL) {
+        mRawText[start] = 0;
+    } else {
+        int length = wcslen(mRawText);
+        int size = length - (end - mRawText);
+        memmove(start, end+1, sizeof(unicode)*size)
+    }
 	listLen = listLen - 1;
-	
-	}
+}
 
 
 
@@ -502,13 +495,13 @@ void DropdownList::draw() {
     mCursorDrawPosition = mCursorPosition;
 
 
-    char *textBeforeCursorBase = stringDuplicate( mText );
-    char *textAfterCursorBase = stringDuplicate( mText );
+    unicode *textBeforeCursorBase = stringDuplicate( mText );
+    unicode *textAfterCursorBase = stringDuplicate( mText );
     
-    char *textBeforeCursor = textBeforeCursorBase;
-    char *textAfterCursor = textAfterCursorBase;
+    unicode *textBeforeCursor = textBeforeCursorBase;
+    unicode *textAfterCursor = textAfterCursorBase;
 
-    textBeforeCursor[ mCursorPosition ] = '\0';
+    textBeforeCursor[ mCursorPosition ] = 0;
     
     textAfterCursor = &( textAfterCursor[ mCursorPosition ] );
 
@@ -537,14 +530,14 @@ void DropdownList::draw() {
                 
                 tooLongBack = true;
                 
-                textAfterCursor[ strlen( textAfterCursor ) - 1 ] = '\0';
+                textAfterCursor[ wcslen( textAfterCursor ) - 1 ] = '\0';
                 }
             }
         else if( mFont->measureString( textBeforeCursor ) > 
                  mWide / 2 - mBorderWide ) {
 
             // just trim front
-            char *sumText = concatonate( textBeforeCursor, textAfterCursor );
+            unicode *sumText = concatonate( textBeforeCursor, textAfterCursor );
             
             while( mFont->measureString( sumText ) > 
                    mWide - 2 * mBorderWide ) {
@@ -564,7 +557,7 @@ void DropdownList::draw() {
                  mWide / 2 - mBorderWide ) {
             
             // just trim back
-            char *sumText = concatonate( textBeforeCursor, textAfterCursor );
+            unicode *sumText = concatonate( textBeforeCursor, textAfterCursor );
 
             while( mFont->measureString( sumText ) > 
                    mWide - 2 * mBorderWide ) {
@@ -621,7 +614,7 @@ void DropdownList::draw() {
 		
 	if ( mFocused ) {
 		
-		if( mUseClearButton && strcmp( mText, "" ) != 0 ) {
+		if( mUseClearButton && mText[0] != 0 ) {
 			float pixWidth = mCharWidth / 8;
 			float buttonWidth = mFont->measureString( "x" ) + pixWidth * 2;
 			float buttonRightOffset = buttonWidth / 2 + pixWidth * 2;
@@ -638,9 +631,9 @@ void DropdownList::draw() {
 			oldMainFont->drawString( "x", lineDeleteButtonPos, alignCenter );
 		}
 		
-		if( strcmp( mRawText, "" ) != 0 ) {
+		if( mRawText[0] != 0 ) {
 			int numLines;
-			char **lines = split( mRawText, "\n", &numLines );
+			unicode **lines = split( mRawText, L"\n", &numLines );
 			
 			for( int i=0; i<numLines; i++ ) {
 				
@@ -680,7 +673,7 @@ void DropdownList::draw() {
 						
 						}
 						
-					lineText = concatonate( lineText, "...   " );
+					lineText = concatonate( lineText, L"...   " );
 					
 					}
 				
@@ -737,7 +730,7 @@ void DropdownList::draw() {
     if( mFocused && mCursorDrawPosition > -1 ) {            
         // make measurement to draw cursor
 
-        char *beforeCursorText = stringDuplicate( mDrawnText );
+        unicode *beforeCursorText = stringDuplicate( mDrawnText );
         
         beforeCursorText[ mCursorDrawPosition ] = '\0';
         
@@ -873,7 +866,7 @@ void DropdownList::pointerUp( float inX, float inY ) {
             
             for( int i=0; i<=drawnTextLength; i++ ) {
                 
-                char *textCopy = stringDuplicate( mDrawnText );
+                unicode *textCopy = stringDuplicate( mDrawnText );
                 
                 textCopy[i] = '\0';
                 
@@ -902,16 +895,16 @@ void DropdownList::pointerUp( float inX, float inY ) {
 
 
 
-unsigned char DropdownList::processCharacter( unsigned char inASCII ) {
+unsigned unicode DropdownList::processCharacter( unsigned unicode inASCII ) {
 
-    unsigned char processedChar = inASCII;
+    unsigned unicode processedChar = inASCII;
         
     if( mForceCaps ) {
-        processedChar = toupper( inASCII );
-        }
+        processedChar = towupper( inASCII );
+    }
 
     if( mForbiddenChars != NULL ) {
-        int num = strlen( mForbiddenChars );
+        int num = wcslen( mForbiddenChars );
             
         for( int i=0; i<num; i++ ) {
             if( mForbiddenChars[i] == processedChar ) {
@@ -922,7 +915,7 @@ unsigned char DropdownList::processCharacter( unsigned char inASCII ) {
         
 
     if( mAllowedChars != NULL ) {
-        int num = strlen( mAllowedChars );
+        int num = wcslen( mAllowedChars );
             
         char allowed = false;
             
@@ -940,7 +933,7 @@ unsigned char DropdownList::processCharacter( unsigned char inASCII ) {
     else {
         // no allowed list specified 
         
-        if( processedChar == '\r' ) {
+        if( processedChar == (unicode)'\r' ) {
             // \r only permitted if it is listed explicitly
             return 0;
             }
@@ -952,7 +945,7 @@ unsigned char DropdownList::processCharacter( unsigned char inASCII ) {
 
 
 
-void DropdownList::insertCharacter( unsigned char inASCII ) {
+void DropdownList::insertCharacter( unicode inASCII ) {
     
     if( isAnythingSelected() ) {
         // delete selected first
@@ -960,74 +953,59 @@ void DropdownList::insertCharacter( unsigned char inASCII ) {
         }
 
     // add to it
-    char *oldText = mText;
-    
+    unicode *oldText = mText;
+    int length = wcslen(oldText);
     if( mMaxLength != -1 &&
-        strlen( oldText ) >= (unsigned int) mMaxLength ) {
+        length >= (unsigned int) mMaxLength ) {
         // max length hit, don't add it
         return;
         }
     
-
-    char *preCursor = stringDuplicate( mText );
-    preCursor[ mCursorPosition ] = '\0';
-    char *postCursor = &( mText[ mCursorPosition ] );
+    unicode* text = new unicode[length+1];
+    memcpy(text, mText, sizeof(unicode)*(mCursorPosition-1));
+    text[mCursorPosition-1] = inASCII;
+    wcscpy(text+mCursorPosition, mText+mCursorPosition)
     
-    mText = autoSprintf( "%s%c%s", 
-                         preCursor, inASCII, postCursor );
-    mTextLen = strlen( mText );
-
-    delete [] preCursor;
+    delete []mText;
     
-    delete [] oldText;
-    
+    mText = text;
+    mTextLen = wcslen( mText );
     mCursorPosition++;
-    }
+}
 
 
 
-void DropdownList::insertString( char *inString ) {
+void DropdownList::insertString( unicode *inString ) {
     if( isAnythingSelected() ) {
         // delete selected first
         deleteHit();
         }
     
     // add to it
-    char *oldText = mText;
+    unicode *oldText = mText;
     
-
-    char *preCursor = stringDuplicate( mText );
-    preCursor[ mCursorPosition ] = '\0';
-    char *postCursor = &( mText[ mCursorPosition ] );
-    
-    mText = autoSprintf( "%s%s%s", 
-                         preCursor, inString, postCursor );
-    
-    mTextLen = strlen( mText );
-
+   // add to it
+    unicode *oldText = mText;
+    int length = wcslen(oldText);
+    int inlen = wcslen(inString);
     if( mMaxLength != -1 &&
-        mTextLen > mMaxLength ) {
-        // truncate
-        mText[ mMaxLength ] = '\0';
-        
-        char *longString = mText;
-        mText = stringDuplicate( mText );
-        delete [] longString;
-        
-        mTextLen = strlen( mText );
-        }
-    
-
-    delete [] preCursor;
-    
-    delete [] oldText;
-    
-    mCursorPosition += strlen( inString );
-
-    if( mCursorPosition > mTextLen ) {
-        mCursorPosition = mTextLen;
-        }
+        (length-inlen+1) >= (unsigned int) mMaxLength ) {
+        // max length hit, don't add it
+        return;
     }
+    
+    
+    unicode* text = new unicode[length+inlen];
+    memcpy(text, mText, sizeof(unicode)*(mCursorPosition-1));
+    wcscpy(mText+mCursorPosition-1, inString);
+    wcscpy(text+mCursorPosition-1+inlen, mText+mCursorPosition)
+    
+    delete []mText;
+    
+    mText = text;
+    mTextLen = wcslen( mText );
+    mCursorPosition+=inlen;
+}
 
 
 
@@ -1094,37 +1072,38 @@ void DropdownList::setFireOnLoseFocus( char inFireOnLeave ) {
 
 
 
-void DropdownList::keyDown( unsigned char inASCII ) {
+void DropdownList::keyDown( unicode inASCII ) {
     if( !mFocused ) {
         return;
-        }
+    }
     mCursorFlashSteps = 0;
     
     if( isCommandKeyDown() ) {
         // not a normal key stroke (command key)
         // ignore it as input
 
-        if( mUsePasteShortcut && ( inASCII == 'v' || inASCII == 22 ) ) {
+        if( mUsePasteShortcut && ( inASCII == (unicode)'v' || inASCII == 22 ) ) {
             // ctrl-v is SYN on some platforms
             
             // paste!
             if( isClipboardSupported() ) {
                 char *clipboardText = getClipboardText();
-        
                 int len = strlen( clipboardText );
-                
+                unicode* text = new unicode[len+1];
+                utf8ToUnicode(clipboardText, text);
+
                 for( int i=0; i<len; i++ ) {
                     
-                    unsigned char processedChar = 
-                        processCharacter( clipboardText[i] );    
+                    unicode processedChar = 
+                        processCharacter( text[i] );    
 
                     if( processedChar != 0 ) {
-                        
                         insertCharacter( processedChar );
-                        }
                     }
+                }
                 delete [] clipboardText;
-                
+                delete [] text;
+
                 mHoldDeleteSteps = -1;
                 mFirstDeleteRepeatDone = false;
                 
@@ -1136,23 +1115,23 @@ void DropdownList::keyDown( unsigned char inASCII ) {
                 }
             }
 			
-        if( mUsePasteShortcut && inASCII + 64 == toupper('c') )  {
+        if( mUsePasteShortcut && inASCII + 64 == (unicode)toupper('c') )  {
 			char *text = getText();
 			setClipboardText( text );
 			delete [] text;
-			}
+		}
 
         // but ONLY if it's an alphabetical key (A-Z,a-z)
         // Some international keyboards use ALT to type certain symbols
 
-        if( ( inASCII >= 'A' && inASCII <= 'Z' )
+        if( ( inASCII >= (unicode)'A' && inASCII <= (unicode)'Z' )
             ||
-            ( inASCII >= 'a' && inASCII <= 'z' ) ) {
+            ( inASCII >= (unicode)'a' && inASCII <= (unicode)'z' ) ) {
             
             return;
-            }
-        
         }
+        
+    }
     
 
     if( inASCII == 127 || inASCII == 8 ) {
@@ -1162,10 +1141,10 @@ void DropdownList::keyDown( unsigned char inASCII ) {
         mHoldDeleteSteps = 0;
 
         clearArrowRepeat();
-        }
+    }
     else if( inASCII == 13 ) {
         // enter hit in field
-        unsigned char processedChar = processCharacter( inASCII );    
+        unicode processedChar = processCharacter( unicode );    
 
         if( processedChar != 0 ) {
             // newline is allowed
@@ -1178,21 +1157,20 @@ void DropdownList::keyDown( unsigned char inASCII ) {
             
             if( mFireOnAnyChange ) {
                 fireActionPerformed( this );
-                }
             }
+        }
         else {
             // newline not allowed in this field
             fireActionPerformed( this );
-            }
         }
+    }
     else if( inASCII >= 32 ) {
 
-        unsigned char processedChar = processCharacter( inASCII );    
+        unicode processedChar = processCharacter( inASCII );    
 
         if( processedChar != 0 ) {
-            
             insertCharacter( processedChar );
-            }
+        }
         
         mHoldDeleteSteps = -1;
         mFirstDeleteRepeatDone = false;
@@ -1201,19 +1179,19 @@ void DropdownList::keyDown( unsigned char inASCII ) {
 
         if( mFireOnAnyChange ) {
             fireActionPerformed( this );
-            }
-        }    
-    }
+        }
+    }    
+}
 
 
 
-void DropdownList::keyUp( unsigned char inASCII ) {
+void DropdownList::keyUp( unicode inASCII ) {
     if( inASCII == 127 || inASCII == 8 ) {
         // end delete hold down
         mHoldDeleteSteps = -1;
         mFirstDeleteRepeatDone = false;
-        }
     }
+}
 
 
 
@@ -1233,7 +1211,7 @@ void DropdownList::deleteHit() {
 
             mSelectionStart = -1;
             mSelectionEnd = -1;
-            }
+        }
         else if( isCommandKeyDown() ) {
             // word delete 
 
@@ -1241,32 +1219,32 @@ void DropdownList::deleteHit() {
 
             // skip non-space, non-newline characters
             while( newCursorPos > 0 &&
-                   mText[ newCursorPos - 1 ] != ' ' &&
-                   mText[ newCursorPos - 1 ] != '\r' ) {
+                   mText[ newCursorPos - 1 ] != (unicode)' ' &&
+                   mText[ newCursorPos - 1 ] != (unicode)'\r' ) {
                 newCursorPos --;
-                }
+            }
         
             // skip space and newline characters
             while( newCursorPos > 0 &&
-                   ( mText[ newCursorPos - 1 ] == ' ' ||
-                     mText[ newCursorPos - 1 ] == '\r' ) ) {
+                   ( mText[ newCursorPos - 1 ] == (unicode)' ' ||
+                     mText[ newCursorPos - 1 ] == (unicode)'\r' ) ) {
                 newCursorPos --;
-                }
             }
+        }
         
         // section cleared no matter what when delete is hit
         mSelectionStart = -1;
         mSelectionEnd = -1;
 
 
-        char *oldText = mText;
+        unicode *oldText = mText;
         
-        char *preCursor = stringDuplicate( mText );
+        unicode *preCursor = stringDuplicate( mText );
         preCursor[ newCursorPos ] = '\0';
-        char *postCursor = &( mText[ mCursorPosition ] );
+        unicode *postCursor = &( mText[ mCursorPosition ] );
 
-        mText = autoSprintf( "%s%s", preCursor, postCursor );
-        mTextLen = strlen( mText );
+        mText = concatonate(preCursor, postCursor);
+        mTextLen = wcslen( mText );
         
         delete [] preCursor;
 
@@ -1276,9 +1254,9 @@ void DropdownList::deleteHit() {
 
         if( mFireOnAnyChange ) {
             fireActionPerformed( this );
-            }
         }
     }
+}
 
 
 
@@ -1286,8 +1264,8 @@ void DropdownList::clearArrowRepeat() {
     for( int i=0; i<2; i++ ) {
         mHoldArrowSteps[i] = -1;
         mFirstArrowRepeatDone[i] = false;
-        }
     }
+}
 
 
 
@@ -1299,52 +1277,52 @@ void DropdownList::leftHit() {
             mSelectionStart = mCursorPosition;
             mSelectionEnd = mCursorPosition;
             mSelectionAdjusting = &mSelectionStart;
-            }
+        }
         else {
             mCursorPosition = *mSelectionAdjusting;
-            }
         }
+    }
 
     if( ! isShiftKeyDown() ) {
         if( isAnythingSelected() ) {
             mCursorPosition = mSelectionStart + 1;
-            }
+        }
 
         mSelectionStart = -1;
         mSelectionEnd = -1;
-        }
+    }
 
     if( isCommandKeyDown() ) {
         // word jump 
 
         // skip non-space, non-newline characters
         while( mCursorPosition > 0 &&
-               mText[ mCursorPosition - 1 ] != ' ' &&
-               mText[ mCursorPosition - 1 ] != '\r' ) {
+               mText[ mCursorPosition - 1 ] != (unicode)' ' &&
+               mText[ mCursorPosition - 1 ] != (unicode)'\r' ) {
             mCursorPosition --;
-            }
+        }
         
         // skip space and newline characters
         while( mCursorPosition > 0 &&
-               ( mText[ mCursorPosition - 1 ] == ' ' ||
-                 mText[ mCursorPosition - 1 ] == '\r' ) ) {
+               ( mText[ mCursorPosition - 1 ] == (unicode)' ' ||
+                 mText[ mCursorPosition - 1 ] == (unicode)'\r' ) ) {
             mCursorPosition --;
-            }
-        
         }
+        
+    }
     else {    
         mCursorPosition --;
         if( mCursorPosition < 0 ) {
             mCursorPosition = 0;
-            }
         }
+    }
 
     if( isShiftKeyDown() && mShiftPlusArrowsCanSelect ) {
         *mSelectionAdjusting = mCursorPosition;
         fixSelectionStartEnd();
-        }
-
     }
+
+}
 
 
 
@@ -1356,54 +1334,54 @@ void DropdownList::rightHit() {
             mSelectionStart = mCursorPosition;
             mSelectionEnd = mCursorPosition;
             mSelectionAdjusting = &mSelectionEnd;
-            }
+        }
         else {
             mCursorPosition = *mSelectionAdjusting;
-            }
         }
+    }
     
     if( ! isShiftKeyDown() ) {
         if( isAnythingSelected() ) {
             mCursorPosition = mSelectionEnd - 1;
-            }
+        }
             
         mSelectionStart = -1;
         mSelectionEnd = -1;
-        }
+    }
 
     if( isCommandKeyDown() ) {
         // word jump 
-        int textLen = strlen( mText );
+        int textLen = wcslen( mText );
         
         // skip space and newline characters
         while( mCursorPosition < textLen &&
-               ( mText[ mCursorPosition ] == ' ' ||
-                 mText[ mCursorPosition ] == '\r'  ) ) {
+               ( mText[ mCursorPosition ] == (unicode)' ' ||
+                 mText[ mCursorPosition ] == (unicode)'\r'  ) ) {
             mCursorPosition ++;
-            }
+        }
 
         // skip non-space and non-newline characters
         while( mCursorPosition < textLen &&
-               mText[ mCursorPosition ] != ' ' &&
-               mText[ mCursorPosition ] != '\r' ) {
+               mText[ mCursorPosition ] != (unicode)' ' &&
+               mText[ mCursorPosition ] != (unicode)'\r' ) {
             mCursorPosition ++;
-            }
-        
-        
         }
+        
+        
+    }
     else {
         mCursorPosition ++;
         if( mCursorPosition > (int)strlen( mText ) ) {
             mCursorPosition = strlen( mText );
-            }
         }
+    }
 
     if( isShiftKeyDown() && mShiftPlusArrowsCanSelect ) {
         *mSelectionAdjusting = mCursorPosition;
         fixSelectionStartEnd();
-        }
-    
     }
+    
+}
 
 
 
@@ -1411,7 +1389,7 @@ void DropdownList::rightHit() {
 void DropdownList::specialKeyDown( int inKeyCode ) {
     if( !mFocused ) {
         return;
-        }
+    }
     
     mCursorFlashSteps = 0;
     
@@ -1421,20 +1399,20 @@ void DropdownList::specialKeyDown( int inKeyCode ) {
                 leftHit();
                 clearArrowRepeat();
                 mHoldArrowSteps[0] = 0;
-                }
+            }
             break;
         case MG_KEY_RIGHT:
             if( ! mIgnoreArrowKeys ) {
                 rightHit(); 
                 clearArrowRepeat();
                 mHoldArrowSteps[1] = 0;
-                }
+            }
             break;
         default:
             break;
-        }
-    
     }
+    
+}
 
 
 
@@ -1442,12 +1420,12 @@ void DropdownList::specialKeyUp( int inKeyCode ) {
     if( inKeyCode == MG_KEY_LEFT ) {
         mHoldArrowSteps[0] = -1;
         mFirstArrowRepeatDone[0] = false;
-        }
+    }
     else if( inKeyCode == MG_KEY_RIGHT ) {
         mHoldArrowSteps[1] = -1;
         mFirstArrowRepeatDone[1] = false;
-        }
     }
+}
 
 
 
@@ -1456,7 +1434,7 @@ void DropdownList::focus() {
     if( sFocusedDropdownList != NULL && sFocusedDropdownList != this ) {
         // unfocus last focused
         sFocusedDropdownList->unfocus();
-        }
+    }
 		
     TextField::unfocusAll();
 
@@ -1464,7 +1442,7 @@ void DropdownList::focus() {
     sFocusedDropdownList = this;
 
     mContentsHidden = false;
-    }
+}
 
 
 
@@ -1481,15 +1459,15 @@ void DropdownList::unfocus() {
         sFocusedDropdownList = NULL;
         if( mFireOnLeave ) {
             fireActionPerformed( this );
-            }
-        }    
-    }
+        }
+    }    
+}
 
 
 
 char DropdownList::isFocused() {
     return mFocused;
-    }
+}
 
 
 
@@ -1497,16 +1475,16 @@ void DropdownList::setDeleteRepeatDelays( int inFirstDelaySteps,
                                        int inNextDelaySteps ) {
     sDeleteFirstDelaySteps = inFirstDelaySteps;
     sDeleteNextDelaySteps = inNextDelaySteps;
-    }
+}
 
 
 
 char DropdownList::isAnyFocused() {
     if( sFocusedDropdownList != NULL ) {
         return true;
-        }
-    return false;
     }
+    return false;
+}
 
 
         
@@ -1515,23 +1493,23 @@ void DropdownList::unfocusAll() {
     if( sFocusedDropdownList != NULL ) {
         // unfocus last focused
         sFocusedDropdownList->unfocus();
-        }
+    }
 
     sFocusedDropdownList = NULL;
-    }
+}
 
 
 
 
 void DropdownList::setLabelSide( char inLabelOnRight ) {
     mLabelOnRight = inLabelOnRight;
-    }
+}
 
 
 
 void DropdownList::setLabelTop( char inLabelOnTop ) {
     mLabelOnTop = inLabelOnTop;
-    }
+}
 
 
         
@@ -1540,28 +1518,27 @@ char DropdownList::isAnythingSelected() {
         ( mSelectionStart != -1 && 
           mSelectionEnd != -1 &&
           mSelectionStart != mSelectionEnd );
-    }
+}
 
 
 
-char *DropdownList::getSelectedText() {
+unicode *DropdownList::getSelectedText() {
 
     if( ! isAnythingSelected() ) {
         return NULL;
-        }
+    }
     
-    char *textCopy = stringDuplicate( mText );
+    unicode *textCopy = stringDuplicate( mText );
 
     textCopy[ mSelectionEnd ] = '\0';
     
-    char *startPointer = &( textCopy[ mSelectionStart ] );
-    
-    char *returnVal = stringDuplicate( startPointer );
-    
+    unicode *startPointer = &( textCopy[ mSelectionStart ] );  
+    unicode *returnVal = stringDuplicate( startPointer );
+
     delete [] textCopy;
-    
+
     return returnVal;
-    }
+}
 
 
 
@@ -1573,35 +1550,35 @@ void DropdownList::fixSelectionStartEnd() {
 
         if( mSelectionAdjusting == &mSelectionStart ) {
             mSelectionAdjusting = &mSelectionEnd;
-            }
+        }
         else if( mSelectionAdjusting == &mSelectionEnd ) {
             mSelectionAdjusting = &mSelectionStart;
-            }
         }
+    }
     else if( mSelectionEnd == mSelectionStart ) {
         mSelectionAdjusting = &mSelectionEnd;
-        }
-    
     }
+    
+}
 
 
 
 void DropdownList::setShiftArrowsCanSelect( char inCanSelect ) {
     mShiftPlusArrowsCanSelect = inCanSelect;
-    }
+}
 
 
 
 void DropdownList::usePasteShortcut( char inShortcutOn ) {
     mUsePasteShortcut = inShortcutOn;
-    }
+}
 	
 	
 void DropdownList::useClearButton( char inClearButtonOn ) {
     mUseClearButton = inClearButtonOn;
-    }
+ }
 
 
 char DropdownList::isMouseOver() {
     return mHover;
-    }
+}

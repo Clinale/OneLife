@@ -7,6 +7,7 @@
 
 #include "minorGems/game/Font.h"
 
+typedef unsigned short unicode;
 
 class TextButton : public Button {
         
