@@ -516,6 +516,7 @@ typedef struct FreshConnection {
         double connectionStartTimeSeconds;
 
         char *email;
+	char *spawnCode = NULL;
         uint32_t hashedSpawnSeed;
         char *famTarget = NULL;
         
@@ -1697,6 +1698,9 @@ static void deleteMembers( FreshConnection *inConnection ) {
     if( inConnection->twinCode != NULL ) {
         delete [] inConnection->twinCode;
         }
+    if (inConnection->spawnCode != NULL ) {
+	    delete [] inConnection->spawnCode;
+    }
     }
 
 
@@ -8469,11 +8473,17 @@ int processLoggedInPlayer( char inAllowReconnect,
               newObject.yd,
               players.size(),
               newObject.parentChainLength );
-    
-    AppLog::infoF( "New player %s connected as player %d (tutorial=%d) (%d,%d)"
+    char *seed;
+    if (connection->spawnCode == NULL) {
+	seed = "";
+    } else {
+	seed = connection->spawnCode;
+    }
+    HostAddress* a = connection->sock->getRemoteHostAddress(); 
+    AppLog::infoF( "New player %s connected as player %d (tutorial=%d, IP=%s, Seed=%s) (%d,%d)"
                    " (maxPlacementX=%d)",
                    newObject.email, newObject.id,
-                   inTutorialNumber, newObject.xs, newObject.ys,
+                   inTutorialNumber, a->mAddressString, seed, newObject.xs, newObject.ys,
                    maxPlacementX );
     
     return newObject.id;
@@ -13700,7 +13710,7 @@ int main() {
         
         // listen for messages from new connections
         double currentTime = Time::getCurrentTime();
-        
+        std::string seed; 
         for( int i=0; i<newConnections.size(); i++ ) {
             
             FreshConnection *nextConnection = newConnections.getElement( i );
@@ -14081,10 +14091,11 @@ int main() {
 
                                 if( seedLen > minSeedLen ) {
                                     // Get the substr from one after the seed delim
-                                    std::string seed { emailAndSeed.substr( seedDelimPos + 1 ) };
+				    // std::string seed { emailAndSeed.substr( seedDelimPos + 1 ) };
+				    seed = emailAndSeed.substr( seedDelimPos + 1 ) ;
                                     char *sSeed = SettingsManager::getStringSetting("seedPepper", "default pepper");
                                     std::string seedPepper { sSeed };
-                                    
+                                    nextConnection->spawnCode = stringDuplicate(seed.c_str()); 
                                     nextConnection->hashedSpawnSeed =
                                         fnv1aHash(seed, fnv1aHash(seedPepper));
                                     
@@ -14245,7 +14256,15 @@ int main() {
                                     // ready to start normal message exchange
                                     // with client
                             
-                                    AppLog::info( "Got new player logged in" );
+				    if (nextConnection->spawnCode == NULL){
+					    seed = "";
+				    }
+				    else {
+					    seed = nextConnection->spawnCode;
+				    }
+				    HostAddress* a = nextConnection->sock->getRemoteHostAddress();
+                                    AppLog::info( "Got new player %s (IP:%s, Seed:%s) logged in",
+					       nextConnection->email, a->mAddressString, seed);
                                     
                                     delete nextConnection->ticketServerRequest;
                                     nextConnection->ticketServerRequest = NULL;
