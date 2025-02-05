@@ -13,6 +13,8 @@
 #include "SoundUsage.h"
 
 
+void setObjectDrawAlpha( float alpha );
+
 void setDrawColor( FloatRGB inColor );
 
 //defined in animationBank
@@ -26,13 +28,14 @@ extern bool trippingEffectDisabled;
 // tracks when creation of an object taps out nearby objects on a grid
 typedef struct TapoutRecord {
         int triggerID;
-        int gridSpacingX, gridSpacingY;
-        // how far to reach in +/- x and y when tapping out
-        int limitX, limitY;
-        // 2HOL - can set the max number of objects to be tapped out by one operation
-        int tapoutCountLimit;
-        // 2HOL - can specify coordinates to tap out
-        int specificX, specificY;
+        // tapout mode
+        // 0: Area tapout. x radius, y radius, limit(optional).
+        // 1: Coordinates. x, y.
+        // 2: Directional tapout. N radius, E radius, S radius, W radius, limit(optional).
+        int tapoutMode;
+        int radiusN, radiusE, radiusS, radiusW; // how far to reach in +/- x and y when tapping out
+        int tapoutCountLimit; // max number of objects to be tapped out by one operation
+        int specificX, specificY; // specify coordinates to tap out
     } TapoutRecord;
 
 
@@ -425,10 +428,10 @@ typedef struct ObjectRecord {
         int horizontalVersionID;
         int verticalVersionID;
         int cornerVersionID;
-		
-		
-		char isTapOutTrigger;
-		
+        
+        
+        char isTapOutTrigger;
+        
         char autoDefaultTrans;
 
         char noBackAccess;
@@ -438,10 +441,10 @@ typedef struct ObjectRecord {
         char passwordAssigner;
         char passwordProtectable;
         
-		//2HOL mechanics to read written objects
-		char clickToRead;
-		char passToRead;
-		
+        //2HOL mechanics to read written objects
+        char clickToRead;
+        char passToRead;
+        
         SimpleVector<int> IndX;
         SimpleVector<int> IndY;
         SimpleVector<char*> IndPass;
@@ -586,6 +589,8 @@ int addObject( const char *inDescription,
                int inRace,
                char inDeathMarker,
                char inHomeMarker,
+               char inTapoutTrigger,
+               char *inTapoutTriggerParameters,
                char inFloor,
                char inPartialFloor,
                char inFloorHugging,
@@ -662,6 +667,14 @@ void setDrawnObjectContained( char inContained );
 
 
 
+// the scale of the next object drawn
+// for example, object icons in minitech and vog picker should not
+// scale with zoom
+// remember to set the scale back to 1.0 afterwards
+void setDrawnObjectScale( double inScale );
+
+
+
 
 // inAge -1 for no age modifier
 //
@@ -678,8 +691,7 @@ HoldingPos drawObject( ObjectRecord *inObject, int inDrawBehindSlots,
                        int inHideClosestArm,
                        char inHideAllLimbs,
                        char inHeldNotInPlaceYet,
-                       ClothingSet inClothing,
-                       double inScale = 1.0 );
+                       ClothingSet inClothing );
 
 
 HoldingPos drawObject( ObjectRecord *inObject, doublePair inPos,
@@ -860,6 +872,8 @@ int getMouthIndex( ObjectRecord *inObject, double inAge );
 
 
 char *getBiomesString( ObjectRecord *inObject );
+
+char *getTapoutTriggerString( ObjectRecord *inObject );
 
 
 void getAllBiomes( SimpleVector<int> *inVectorToFill );

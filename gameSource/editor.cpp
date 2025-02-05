@@ -139,8 +139,8 @@ char initDone = false;
 
 float mouseSpeed;
 
-int musicOff = false;
-float musicLoudness;
+int soundEffectsOff = false;
+float soundEffectsLoudness;
 
 int webRetrySeconds;
 
@@ -240,11 +240,15 @@ Font *oldMainFont;
 Font *smallFont;
 Font *mainFontFixed;
 Font *numbersFontFixed;
-Font *tinyHandwritingFont;
+Font *tinyHandwritingFontFixedSize;
 
 char *shutdownMessage = NULL;
 
-
+float getLivingLifeBouncingYOffset( int oid ) {
+    // dummy function because this is expected in objectBank and animationBank
+    // it is used for yum finder and object finder in the client
+    return 0.0;
+    }
 
 
 
@@ -270,11 +274,11 @@ static int stepsBetweenDeleteRepeat;
 
 
 static const char *customDataFormatWriteString = 
-    "version%d_mouseSpeed%f_musicOff%d_musicLoudness%f"
+    "version%d_mouseSpeed%f_soundEffectsOff%d_soundEffectsLoudness%f"
     "_webRetrySeconds%d";
 
 static const char *customDataFormatReadString = 
-    "version%d_mouseSpeed%f_musicOff%d_musicLoudness%f"
+    "version%d_mouseSpeed%f_soundEffectsOff%d_soundEffectsLoudness%f"
     "_webRetrySeconds%d";
 
 
@@ -282,18 +286,18 @@ char *getCustomRecordedGameData() {
     
     float mouseSpeedSetting = 
         SettingsManager::getFloatSetting( "mouseSpeed", 1.0f );
-    int musicOffSetting = 
-        SettingsManager::getIntSetting( "musicOff", 0 );
-    float musicLoudnessSetting = 
-        SettingsManager::getFloatSetting( "musicLoudness", 1.0f );
+    int soundEffectsOffSetting = 
+        SettingsManager::getIntSetting( "soundEffectsOff", 0 );
+    float soundEffectsLoudnessSetting = 
+        SettingsManager::getFloatSetting( "soundEffectsLoudness", 1.0f );
     int webRetrySecondsSetting = 
         SettingsManager::getIntSetting( "webRetrySeconds", 10 );
     
 
     char * result = autoSprintf(
         customDataFormatWriteString,
-        versionNumber, mouseSpeedSetting, musicOffSetting, 
-        musicLoudnessSetting,
+        versionNumber, mouseSpeedSetting, soundEffectsOffSetting, 
+        soundEffectsLoudnessSetting,
         webRetrySecondsSetting );
     
 
@@ -329,8 +333,8 @@ void initDrawString( int inWidth, int inHeight ) {
     mainFont->setMinimumPositionPrecision( 1 );
     oldMainFont = new Font( getFontTGAFileName(), 6, 6, false, 16 );
     oldMainFont->setMinimumPositionPrecision( 1 );
-	tinyHandwritingFont = new Font( "font_handwriting_32_32.tga", 3, 6, false, 16/2 );
-	tinyHandwritingFont->setMinimumPositionPrecision( 1 );
+    tinyHandwritingFontFixedSize = new Font( "font_handwriting_32_32.tga", 3, 6, false, 16/2 );
+    tinyHandwritingFontFixedSize->setMinimumPositionPrecision( 1 );
 
     setViewCenterPosition( lastScreenViewCenter.x, lastScreenViewCenter.y );
 
@@ -447,8 +451,8 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
 
     float mouseSpeedSetting = 1.0f;
     
-    int musicOffSetting = 0;
-    float musicLoudnessSetting = 1.0f;
+    int soundEffectsOffSetting = 0;
+    float soundEffectsLoudnessSetting = 1.0f;
     int webRetrySecondsSetting = 10;
 
     
@@ -458,8 +462,8 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
                           customDataFormatReadString, 
                           &readVersionNumber,
                           &mouseSpeedSetting, 
-                          &musicOffSetting,
-                          &musicLoudnessSetting,
+                          &soundEffectsOffSetting,
+                          &soundEffectsLoudnessSetting,
                           &webRetrySecondsSetting );
     if( numRead != 5 ) {
         // no recorded game?
@@ -484,8 +488,8 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
 
     mouseSpeed = mouseParam * inWidth / viewWidth;
 
-    musicOff = musicOffSetting;
-    musicLoudness = musicLoudnessSetting;
+    soundEffectsOff = soundEffectsOff;
+    soundEffectsLoudness = soundEffectsLoudnessSetting;
     webRetrySeconds = webRetrySecondsSetting;
 
     
@@ -518,7 +522,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
 
 
 
-    setSoundLoudness( musicLoudness );
+    setSoundLoudness( soundEffectsLoudness );
     setSoundPlaying( true );
     //setSoundSpriteRateRange( 0.95, 1.05 );
     setSoundSpriteVolumeRange( 0.60, 1.0 );
@@ -1693,7 +1697,7 @@ void specialKeyDown( int inKey ) {
     if( currentGamePage != NULL ) {
         currentGamePage->base_specialKeyDown( inKey );
         }
-	}
+    }
 
 
 
@@ -1705,14 +1709,14 @@ void specialKeyUp( int inKey ) {
     if( currentGamePage != NULL ) {
         currentGamePage->base_specialKeyUp( inKey );
         }
-	} 
+    } 
 
 
 
 
 char getUsesSound() {
     
-    return ! musicOff;
+    return ! soundEffectsOff;
     }
 
 

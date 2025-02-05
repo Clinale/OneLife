@@ -180,51 +180,51 @@ static JenkinsRandomSource randSource;
 
 
 void setTrippingColor( double x, double y ) {
-	
-	// Nothing fancy, just wanna map the screen x, y into [0, 1]
-	// So hue change is continuous across the screen
-	double factor = (int)(abs(x + 2 * y) / 3 / 128) % 10;
-	factor /= 10;
-	
-	double curTime = Time::getCurrentTime();
-	
-	// Time between each color change
-	int period = 2; 
-	
-	int t1 = (int)curTime;
-	int t_progress = (int)t1 % period;
-	if( t_progress != 0 ) t1 -= t_progress;
-	int t2 = t1 + period;
-	
-	randSource.reseed( t1 );
-	double r1 = randSource.getRandomBoundedDouble( 0, 1 );
-	double g1 = randSource.getRandomBoundedDouble( 0, 1 );
-	double b1 = randSource.getRandomBoundedDouble( 0, 1 );
-	r1 = (1 + factor) * (1 + r1);
-	g1 = (1 + factor) * (1 + g1);
-	b1 = (1 + factor) * (1 + b1);
-	r1 = r1 - (int)r1;
-	g1 = g1 - (int)g1;
-	b1 = b1 - (int)b1;
-	
-	randSource.reseed( t2 );
-	double r2 = randSource.getRandomBoundedDouble( 0, 1 );
-	double g2 = randSource.getRandomBoundedDouble( 0, 1 );
-	double b2 = randSource.getRandomBoundedDouble( 0, 1 );
-	r2 = (1 + factor) * (1 + r2);
-	g2 = (1 + factor) * (1 + g2);
-	b2 = (1 + factor) * (1 + b2);
-	r2 = r2 - (int)r2;
-	g2 = g2 - (int)g2;
-	b2 = b2 - (int)b2;
+    
+    // Nothing fancy, just wanna map the screen x, y into [0, 1]
+    // So hue change is continuous across the screen
+    double factor = (int)(abs(x + 2 * y) / 3 / 128) % 10;
+    factor /= 10;
+    
+    double curTime = Time::getCurrentTime();
+    
+    // Time between each color change
+    int period = 2; 
+    
+    int t1 = (int)curTime;
+    int t_progress = (int)t1 % period;
+    if( t_progress != 0 ) t1 -= t_progress;
+    int t2 = t1 + period;
+    
+    randSource.reseed( t1 );
+    double r1 = randSource.getRandomBoundedDouble( 0, 1 );
+    double g1 = randSource.getRandomBoundedDouble( 0, 1 );
+    double b1 = randSource.getRandomBoundedDouble( 0, 1 );
+    r1 = (1 + factor) * (1 + r1);
+    g1 = (1 + factor) * (1 + g1);
+    b1 = (1 + factor) * (1 + b1);
+    r1 = r1 - (int)r1;
+    g1 = g1 - (int)g1;
+    b1 = b1 - (int)b1;
+    
+    randSource.reseed( t2 );
+    double r2 = randSource.getRandomBoundedDouble( 0, 1 );
+    double g2 = randSource.getRandomBoundedDouble( 0, 1 );
+    double b2 = randSource.getRandomBoundedDouble( 0, 1 );
+    r2 = (1 + factor) * (1 + r2);
+    g2 = (1 + factor) * (1 + g2);
+    b2 = (1 + factor) * (1 + b2);
+    r2 = r2 - (int)r2;
+    g2 = g2 - (int)g2;
+    b2 = b2 - (int)b2;
 
-	// Colors fade from one period to the next
-	double r = (r2 - r1) * (curTime - t1) / period + r1;
-	double g = (g2 - g1) * (curTime - t1) / period + g1;
-	double b = (b2 - b1) * (curTime - t1) / period + b1;
-	setDrawColor( r, g, b, 1 );
-	
-	}
+    // Colors fade from one period to the next
+    double r = (r2 - r1) * (curTime - t1) / period + r1;
+    double g = (g2 - g1) * (curTime - t1) / period + g1;
+    double b = (b2 - b1) * (curTime - t1) / period + b1;
+    setDrawColor( r, g, b, 1 );
+    
+    }
 
 
 static ClothingSet emptyClothing = { NULL, NULL, NULL, NULL, NULL, NULL };
@@ -249,11 +249,18 @@ int getMaxObjectID() {
     }
 
 
+float globalAlpha = 1.0;
+
+void setObjectDrawAlpha( float alpha ) {
+    globalAlpha = alpha;
+    }
+
+
 void setDrawColor( FloatRGB inColor ) {
     setDrawColor( inColor.r, 
                   inColor.g, 
                   inColor.b,
-                  1 );
+                  globalAlpha );
     }
 
 
@@ -445,11 +452,11 @@ static void setupObjectWritingStatus( ObjectRecord *inR ) {
             // inR->mayHaveMetadata = true;
             }
         }
-	
-	//2HOL mechanics to read written objects
-	inR->clickToRead = false;
-	inR->passToRead = false;
-		
+    
+    //2HOL mechanics to read written objects
+    inR->clickToRead = false;
+    inR->passToRead = false;
+        
     if( strstr( inR->description, "+" ) != NULL ) {
         if( strstr( inR->description, "+clickToRead" ) != NULL ) {
             inR->clickToRead = true;
@@ -636,42 +643,52 @@ static void setupTapout( ObjectRecord *inR ) {
     char *triggerPos = strstr( inR->description, "+tapoutTrigger" );
                 
     if( triggerPos != NULL ) {
-        int xGrid = -1;
-        int yGrid = -1;
-        int xLimit = -1;
-        int yLimit = -1;
-        int tapoutCountLimit = -1;
+        int value1 = -1;
+        int value2 = -1;
+        int value3 = -1;
+        int value4 = -1;
+        int value5 = -1;
+        int value6 = -1;
         
         int numRead = sscanf( triggerPos, 
-                              "+tapoutTrigger,%d,%d,%d,%d,%d",
-                              &xGrid, &yGrid,
-                              &xLimit, &yLimit,
-                              &tapoutCountLimit );
-        if( numRead == 2 || numRead == 4 || numRead == 5 ) {
+                              "+tapoutTrigger,%d,%d,%d,%d,%d,%d",
+                              &value1, &value2,
+                              &value3, &value4,
+                              &value5, &value6 );
+        if( numRead >= 2 && numRead <= 6 ) {
             // valid tapout trigger
             TapoutRecord r;
             
             r.triggerID = inR->id;
             
-            r.gridSpacingX = -1;
-            r.gridSpacingY = -1;
-            r.limitX = -1;
-            r.limitY = -1;
+            r.tapoutMode = value1;
             r.tapoutCountLimit = -1;
             r.specificX = 9999;
-            r.specificY = 9999;            
+            r.specificY = 9999;
+            r.radiusN = -1;
+            r.radiusE = -1;
+            r.radiusS = -1;
+            r.radiusW = -1;
             
-            if( numRead == 2 ) {
-                r.specificX = xGrid;
-                r.specificY = yGrid;
+            if( r.tapoutMode == 1 ) {
+                r.specificX = value2;
+                r.specificY = value3;
                 }
-            else if( numRead == 4 || numRead == 5 ) {
-                r.gridSpacingX = xGrid;
-                r.gridSpacingY = yGrid;
-                r.limitX = xLimit;
-                r.limitY = yLimit;
-                if( numRead == 5 ) 
-                    r.tapoutCountLimit = tapoutCountLimit;
+            else if( r.tapoutMode == 0 ) {
+                r.radiusN = value3;
+                r.radiusE = value2;
+                r.radiusS = value3;
+                r.radiusW = value2;
+                if( numRead == 4 )
+                    r.tapoutCountLimit = value4;
+                }                
+            else if( r.tapoutMode == 2 ) {
+                r.radiusN = value2;
+                r.radiusE = value3;
+                r.radiusS = value4;
+                r.radiusW = value5;
+                if( numRead == 6 )
+                    r.tapoutCountLimit = value6;
                 }
             
             tapoutRecords.push_back( r );
@@ -1053,6 +1070,72 @@ float initObjectBankStep() {
                     
                     next++;
                     }
+                
+
+                r->isTapOutTrigger = false;
+                
+                if( strstr( lines[next], "tapoutTrigger=" ) != NULL ) {
+                    // tapoutTrigger flag present
+                    
+                    int tapoutTriggerRead = 0;
+                    int value1 = -1;
+                    int value2 = -1;
+                    int value3 = -1;
+                    int value4 = -1;
+                    int value5 = -1;
+                    int value6 = -1;
+
+                    int numRead = sscanf( lines[next], 
+                                        "tapoutTrigger=%d#%d,%d,%d,%d,%d,%d", 
+                                        &( tapoutTriggerRead ),
+                                        &value1, &value2,
+                                        &value3, &value4,
+                                        &value5, &value6 );
+
+                    if( tapoutTriggerRead == 1 &&
+                        numRead >= 3 && numRead <= 7 ) {
+                        // valid tapout trigger
+                        TapoutRecord tr;
+                        
+                        tr.triggerID = r->id;
+                        
+                        tr.tapoutMode = value1;
+                        tr.tapoutCountLimit = -1;
+                        tr.specificX = 9999;
+                        tr.specificY = 9999;
+                        tr.radiusN = -1;
+                        tr.radiusE = -1;
+                        tr.radiusS = -1;
+                        tr.radiusW = -1;
+                        
+                        if( tr.tapoutMode == 1 ) {
+                            tr.specificX = value2;
+                            tr.specificY = value3;
+                            }
+                        else if( tr.tapoutMode == 0 ) {
+                            tr.radiusN = value3;
+                            tr.radiusE = value2;
+                            tr.radiusS = value3;
+                            tr.radiusW = value2;
+                            if( numRead == 5 )
+                                tr.tapoutCountLimit = value4;
+                            }                
+                        else if( tr.tapoutMode == 2 ) {
+                            tr.radiusN = value2;
+                            tr.radiusE = value3;
+                            tr.radiusS = value4;
+                            tr.radiusW = value5;
+                            if( numRead == 7 )
+                                tr.tapoutCountLimit = value6;
+                            }
+                        
+                        tapoutRecords.push_back( tr );
+                        
+                        r->isTapOutTrigger = tapoutTriggerRead;
+                        }
+                    
+                    next++;
+                    }
 
 
 
@@ -1129,7 +1212,7 @@ float initObjectBankStep() {
                             
                 r->foodValue = 0;
                 r->bonusValue = 0;
-				
+                
                 sscanf( lines[next], "foodValue=%d,%d", 
                         &( r->foodValue ), &( r->bonusValue ) );
                 
@@ -1885,6 +1968,23 @@ void initObjectBankFinish() {
                                 a->objectID = mainID;
                                 }
                             }
+
+                        // allow use dummies to be tapout triggers
+                        TapoutRecord *tr = getTapoutRecord( mainID );
+                        if( tr != NULL ) {
+                            TapoutRecord tr_dummy;
+                            tr_dummy.triggerID = dummyID;
+                            tr_dummy.tapoutMode = tr->tapoutMode;
+                            tr_dummy.radiusN = tr->radiusN;
+                            tr_dummy.radiusE = tr->radiusE;
+                            tr_dummy.radiusS = tr->radiusS;
+                            tr_dummy.radiusW = tr->radiusW;
+                            tr_dummy.tapoutCountLimit = tr->tapoutCountLimit;
+                            tr_dummy.specificX = tr->specificX;
+                            tr_dummy.specificY = tr->specificY;
+                            tapoutRecords.push_back( tr_dummy );
+                            }
+
                         }
                     }
                 
@@ -2136,7 +2236,7 @@ void initObjectBankFinish() {
     for( int i=0; i<mapSize; i++ ) {
         if( idMap[i] != NULL ) {
             ObjectRecord *o = idMap[i];
-            setupTapout( o );
+            if( !o->isTapOutTrigger ) setupTapout( o );
             }
         }
     
@@ -2638,6 +2738,8 @@ int reAddObject( ObjectRecord *inObject,
     
     char *biomeString = getBiomesString( inObject );
 
+    char *tapoutTriggerParameters = getTapoutTriggerString( inObject );
+
     int id = addObject( desc,
                         inObject->containable,
                         inObject->containSize,
@@ -2666,6 +2768,8 @@ int reAddObject( ObjectRecord *inObject,
                         inObject->race,
                         inObject->deathMarker,
                         inObject->homeMarker,
+                        inObject->isTapOutTrigger,
+                        tapoutTriggerParameters,
                         inObject->floor,
                         inObject->noCover,
                         inObject->floorHugging,
@@ -2723,6 +2827,7 @@ int reAddObject( ObjectRecord *inObject,
                         inObject->cachedHeight );
 
     delete [] biomeString;
+    delete [] tapoutTriggerParameters;
 
     return id;
     }
@@ -2996,6 +3101,8 @@ int addObject( const char *inDescription,
                int inRace,
                char inDeathMarker,
                char inHomeMarker,
+               char inTapoutTrigger,
+               char *inTapoutTriggerParameters,
                char inFloor,
                char inPartialFloor,
                char inFloorHugging,
@@ -3226,6 +3333,7 @@ int addObject( const char *inDescription,
         lines.push_back( autoSprintf( "male=%d", (int)inMale ) );
         lines.push_back( autoSprintf( "deathMarker=%d", (int)inDeathMarker ) );
         lines.push_back( autoSprintf( "homeMarker=%d", (int)inHomeMarker ) );
+        if( inTapoutTrigger ) lines.push_back( autoSprintf( "tapoutTrigger=1#%s", inTapoutTriggerParameters ) );
         
         lines.push_back( autoSprintf( "floor=%d", (int)inFloor ) );
         if( inPartialFloor ) lines.push_back( autoSprintf( "partialFloor=%d", (int)inPartialFloor ) );
@@ -3581,6 +3689,7 @@ int addObject( const char *inDescription,
     
     
     r->homeMarker = inHomeMarker;
+    r->isTapOutTrigger = inTapoutTrigger;
     r->floor = inFloor;
     r->noCover = inPartialFloor;
     r->floorHugging = inFloorHugging;
@@ -3894,6 +4003,14 @@ void setDrawnObjectContained( char inContained ) {
     }
 
 
+double drawObjectScale = 1.0;
+
+void setDrawnObjectScale( double inScale ) {
+    drawObjectScale = inScale;
+    }
+
+
+extern float getLivingLifeBouncingYOffset( int oid );
 
 HoldingPos drawObject( ObjectRecord *inObject, int inDrawBehindSlots,
                        doublePair inPos,
@@ -3901,8 +4018,11 @@ HoldingPos drawObject( ObjectRecord *inObject, int inDrawBehindSlots,
                        int inHideClosestArm,
                        char inHideAllLimbs,
                        char inHeldNotInPlaceYet,
-                       ClothingSet inClothing,
-                       double inScale ) {
+                       ClothingSet inClothing ) {
+    
+    if( drawingContained ) { 
+        inPos.y += getLivingLifeBouncingYOffset( inObject->id );
+        }
     
     if( inObject->noFlip ) {
         inFlipH = false;
@@ -4050,7 +4170,7 @@ HoldingPos drawObject( ObjectRecord *inObject, int inDrawBehindSlots,
             }
 
 
-        spritePos = mult( spritePos, inScale );
+        spritePos = mult( spritePos, drawObjectScale );
         
         doublePair pos = add( spritePos, inPos );
 
@@ -4221,14 +4341,14 @@ HoldingPos drawObject( ObjectRecord *inObject, int inDrawBehindSlots,
             if( additive ) {
                 toggleAdditiveBlend( true );
                 }
-				
-			if( !multiplicative ) {
-				if( isTrippingEffectOn && !trippingEffectDisabled ) setTrippingColor( pos.x, pos.y );
-				}
+                
+            if( !multiplicative ) {
+                if( isTrippingEffectOn && !trippingEffectDisabled ) setTrippingColor( pos.x, pos.y );
+                }
 
             SpriteHandle sh = getSprite( inObject->sprites[i] );
             if( sh != NULL ) {
-                drawSprite( sh, pos, inScale,
+                drawSprite( sh, pos, drawObjectScale,
                             rot, 
                             logicalXOR( inFlipH, inObject->spriteHFlip[i] ) );
                 }
@@ -4369,6 +4489,7 @@ HoldingPos drawObject( ObjectRecord *inObject, doublePair inPos, double inRot,
             }
 
 
+        slotPos = mult( slotPos, drawObjectScale );
         doublePair pos = add( slotPos, inPos );
         
 
@@ -4394,7 +4515,7 @@ HoldingPos drawObject( ObjectRecord *inObject, doublePair inPos, double inRot,
                         inSubContained[i].getElementDirect( s ) );
                     
                     doublePair subCenterOffset =
-                        getObjectCenterOffset( subContained );
+                        computeContainedCenterOffset( contained, subContained );
                     
                     double subRot = rot;
                     
@@ -5384,7 +5505,7 @@ double getClosestObjectPart( ObjectRecord *inObject,
                 ObjectRecord *contained = 
                     getObject( inContained->getElementDirect( i ) );
             
-                doublePair centOffset = getObjectCenterOffset( contained );
+                doublePair centOffset = computeContainedCenterOffset(inObject, contained);
                 
                 if( inObject->slotVert[i] ) {
                     double rotOffset = 
@@ -5778,6 +5899,37 @@ char *getBiomesString( ObjectRecord *inObject ) {
 
     return stringBuffer.getElementString();
     }
+
+char *getTapoutTriggerString( ObjectRecord *inObject ) {
+
+    char *working = NULL;
+
+    TapoutRecord *tr = getTapoutRecord( inObject->id );
+
+    if( tr == NULL ) return NULL;
+
+    if( tr->tapoutMode == 1 ) {
+        working = autoSprintf( "%d,%d,%d", tr->tapoutMode, tr->specificX, tr->specificY );
+        }
+    else if( tr->tapoutMode == 0 ) {
+        if( tr->tapoutCountLimit == -1 ) {
+            working = autoSprintf( "%d,%d,%d", tr->tapoutMode, tr->radiusE, tr->radiusN );
+            }
+        else {
+            working = autoSprintf( "%d,%d,%d,%d", tr->tapoutMode, tr->radiusE, tr->radiusN, tr->tapoutCountLimit );
+            }
+        }                
+    else if( tr->tapoutMode == 2 ) {
+        if( tr->tapoutCountLimit == -1 ) {
+            working = autoSprintf( "%d,%d,%d,%d,%d", tr->tapoutMode, tr->radiusN, tr->radiusE, tr->radiusS, tr->radiusW );
+            }
+        else {
+            working = autoSprintf( "%d,%d,%d,%d,%d,%d", tr->tapoutMode, tr->radiusN, tr->radiusE, tr->radiusS, tr->radiusW, tr->tapoutCountLimit );
+            }
+        }
+
+    return working;
+    }
                        
 
 
@@ -5861,10 +6013,10 @@ doublePair getObjectCenterOffset( ObjectRecord *inObject ) {
             continue;
             }
             
-		if( inObject->spriteIgnoredWhenCalculatingCenterOffset[i] ) {
-			// special flag to skip sprite when calculating position to draw object
-			continue;
-		}
+        if( inObject->spriteIgnoredWhenCalculatingCenterOffset[i] ) {
+            // special flag to skip sprite when calculating position to draw object
+            continue;
+        }
         
 
         int w = sprite->visibleW;
@@ -5925,7 +6077,7 @@ doublePair getObjectBottomCenterOffset( ObjectRecord *inObject ) {
 
 
     // find center of lowessprite
-	
+    
     // 2HOL drawing tweak: instead of finding sprite with lowest center
     // we look for sprite with lowest bottom 
     // this way we make sure that no sprite of an object is drawn 
@@ -5952,16 +6104,16 @@ doublePair getObjectBottomCenterOffset( ObjectRecord *inObject ) {
             // don't consider parts visible only when not contained
             continue;
             }
-			
-		if( inObject->spriteIgnoredWhenCalculatingCenterOffset[i] ) {
-			// special flag to skip sprite when calculating position to draw object
-			continue;
-		}
-		
+            
+        if( inObject->spriteIgnoredWhenCalculatingCenterOffset[i] ) {
+            // special flag to skip sprite when calculating position to draw object
+            continue;
+        }
+        
         doublePair dimensions = { (double)sprite->visibleW, (double)sprite->visibleH };
-		
+        
         doublePair centerOffset = { (double)sprite->centerXOffset,
-									(double)sprite->centerYOffset };
+                                    (double)sprite->centerYOffset };
                                     
         doublePair centerAnchorOffset = { (double)sprite->centerAnchorXOffset,
                                           (double)sprite->centerAnchorYOffset };
@@ -5997,8 +6149,8 @@ doublePair getObjectBottomCenterOffset( ObjectRecord *inObject ) {
         centerAnchorOffset = rotate( centerAnchorOffset, 2 * M_PI * rot );
         
         double y = inObject->spritePos[i].y
-                   + centerOffset.y
                    + centerAnchorOffset.y
+                   - centerOffset.y
                    // there is no way to calculate the visible dimensions after rotation
                    // just use the pre-rotation height here for simplicity
                    - dimensions.y / 2;
@@ -6019,12 +6171,12 @@ doublePair getObjectBottomCenterOffset( ObjectRecord *inObject ) {
         }
 
     doublePair wideCenter = getObjectCenterOffset( inObject );
-	
+    
     // Adjust y so that the lowest point of an object sits
     // on the bottom edge of a slot
     // but keep x of the center of widest sprite
     // (in case object has "feet" that are not centered)
-	
+    
     wideCenter.y = lowestYPos + 14.0; // slot has height of 28.0
 
 

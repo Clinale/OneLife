@@ -162,7 +162,7 @@ timeSec_t slowTime() {
  
 // can replace with frozenTime to freeze time
 // or slowTime to slow it down
-#define MAP_TIMESEC Time::timeSec()
+#define MAP_TIMESEC Time::getCurrentTime()
 //#define MAP_TIMESEC frozenTime()
 //#define MAP_TIMESEC fastTime()
 //#define MAP_TIMESEC slowTime()
@@ -1444,12 +1444,12 @@ static int getBaseMap( int inX, int inY, char *outGridPlacement = NULL ) {
     
     int pickedBiome = getMapBiomeIndex( inX, inY, &secondPlace,
                                                 &secondPlaceGap );
-												
-	if(biomes[pickedBiome] == 7 || biomes[pickedBiome] == 9){
-		density = 1;
-		
-	}
-	setXYRandomSeed( 9877 );
+                                                
+    if(biomes[pickedBiome] == 7 || biomes[pickedBiome] == 9){
+        density = 1;
+        
+    }
+    setXYRandomSeed( 9877 );
     if( getXYRandom( inX, inY ) < density ) {
  
  
@@ -1487,7 +1487,7 @@ static int getBaseMap( int inX, int inY, char *outGridPlacement = NULL ) {
         // if gap is 1.0, it should never happen
  
         // larger values make second place less likely
-		//double secondPlaceReduction = 10.0;
+        //double secondPlaceReduction = 10.0;
 
         //printf( "Second place gap = %f, random(%d,%d)=%f\n", secondPlaceGap,
         //        inX, inY, getXYRandom( 2087 + inX, 793 + inY ) );
@@ -1515,7 +1515,7 @@ static int getBaseMap( int inX, int inY, char *outGridPlacement = NULL ) {
        
  
         for( int i=0; i<numObjects; i++ ) {
-		
+        
             setXYRandomSeed( 793 * i + 123 );
        
             double randVal = getXYFractal(  inX,
@@ -1527,7 +1527,7 @@ static int getBaseMap( int inX, int inY, char *outGridPlacement = NULL ) {
                 maxValue = randVal;
                 specialObjectIndex = i;
             }
-			
+            
         }
  
  
@@ -1536,7 +1536,7 @@ static int getBaseMap( int inX, int inY, char *outGridPlacement = NULL ) {
                 specialObjectIndex );
        
         float newSpecialChance = oldSpecialChance * 10;
-		
+        
         *( naturalMapChances[pickedBiome].getElement( specialObjectIndex ) )
             = newSpecialChance;
 
@@ -1559,8 +1559,8 @@ static int getBaseMap( int inX, int inY, char *outGridPlacement = NULL ) {
         float weightSum = 0;        
        
         while( weightSum < randValue && i < numObjects ) {
-			
-            weightSum += naturalMapChances[pickedBiome].getElementDirect( i );			
+            
+            weightSum += naturalMapChances[pickedBiome].getElementDirect( i );            
             i++;
             }
         i--;
@@ -1572,35 +1572,35 @@ static int getBaseMap( int inX, int inY, char *outGridPlacement = NULL ) {
  
         totalChanceWeight[pickedBiome] = oldTotalChanceWeight;
 
-			if( i >= 0 ) {
-				int returnID = naturalMapIDs[pickedBiome].getElementDirect( i );
-			   
-				if( pickedBiome == secondPlace ) {
-					// object peeking through from second place biome
-	 
-					// make sure it's not a moving object (animal)
-					// those are locked to their target biome only
-					TransRecord *t = getPTrans( -1, returnID );
-					if( t != NULL && t->move != 0 ) {
-						// put empty tile there instead
-						returnID = 0;
-						}
-					}
-	 
-				mapCacheInsert( inX, inY, returnID );
-				return returnID;
-				}
-			else {
-				mapCacheInsert( inX, inY, 0 );
-				return 0;
-			}
+            if( i >= 0 ) {
+                int returnID = naturalMapIDs[pickedBiome].getElementDirect( i );
+               
+                if( pickedBiome == secondPlace ) {
+                    // object peeking through from second place biome
+     
+                    // make sure it's not a moving object (animal)
+                    // those are locked to their target biome only
+                    TransRecord *t = getPTrans( -1, returnID );
+                    if( t != NULL && t->move != 0 ) {
+                        // put empty tile there instead
+                        returnID = 0;
+                        }
+                    }
+     
+                mapCacheInsert( inX, inY, returnID );
+                return returnID;
+                }
+            else {
+                mapCacheInsert( inX, inY, 0 );
+                return 0;
+            }
             
-	} else {
-		if( biomes[pickedBiome] != 7 && biomes[pickedBiome] != 9 ){
-			mapCacheInsert( inX, inY, 0 );
-			return 0;
-			}
-		}
+    } else {
+        if( biomes[pickedBiome] != 7 && biomes[pickedBiome] != 9 ){
+            mapCacheInsert( inX, inY, 0 );
+            return 0;
+            }
+        }
     
     }
  
@@ -2125,7 +2125,7 @@ static void dbPutCached( int inX, int inY, int inSlot, int inSubCont,
  
  
 // returns 1 on miss
-static int dbTimeGetCached( int inX, int inY, int inSlot, int inSubCont ) {
+static double dbTimeGetCached( int inX, int inY, int inSlot, int inSubCont ) {
     DBTimeCacheRecord r =
         dbTimeCache[ computeDBCacheHash( inX, inY, inSlot, inSubCont ) ];
  
@@ -3833,32 +3833,34 @@ char initMap() {
    
     metaDBOpen = true;
  
-    DB_Iterator metaIterator;
-   
-    DB_Iterator_init( &metaDB, &metaIterator );
- 
-    unsigned char metaKey[4];
-   
-    unsigned char metaValue[MAP_METADATA_LENGTH];
- 
-    int maxMetaID = 0;
-    int numMetaRecords = 0;
-   
-    while( DB_Iterator_next( &metaIterator, metaKey, metaValue ) > 0 ) {
-        numMetaRecords++;
-       
-        int metaID = valueToInt( metaKey );
- 
-        if( metaID > maxMetaID ) {
-            maxMetaID = metaID;
+    if( false ) { // old way to determine nextMetadataID
+        DB_Iterator metaIterator;
+    
+        DB_Iterator_init( &metaDB, &metaIterator );
+    
+        unsigned char metaKey[4];
+    
+        unsigned char metaValue[MAP_METADATA_LENGTH];
+    
+        int maxMetaID = 0;
+        int numMetaRecords = 0;
+    
+        while( DB_Iterator_next( &metaIterator, metaKey, metaValue ) > 0 ) {
+            numMetaRecords++;
+        
+            int metaID = valueToInt( metaKey );
+    
+            if( metaID > maxMetaID ) {
+                maxMetaID = metaID;
+                }
             }
+    
+        AppLog::infoF(
+            "MetadataDB:  Found %d records with max MetadataID of %d",
+            numMetaRecords, maxMetaID );
+    
+        setLastMetadataID( maxMetaID );
         }
-   
-    AppLog::infoF(
-        "MetadataDB:  Found %d records with max MetadataID of %d",
-        numMetaRecords, maxMetaID );
-   
-    setLastMetadataID( maxMetaID );
     
     
  
@@ -5202,7 +5204,7 @@ int checkDecayObject( int inX, int inY, int inID ) {
    
     if( mapETA != 0 ) {
        
-        if( (int)mapETA <= MAP_TIMESEC ) {
+        if( mapETA <= MAP_TIMESEC ) {
            
             // object in map has decayed (eta expired)
  
@@ -5771,23 +5773,22 @@ int checkDecayObject( int inX, int inY, int inID ) {
  
                             // add some random variation to avoid lock-step
                             // especially after a server restart
-                            int tweakedSeconds =
-                                randSource.getRandomBoundedInt(
-                                    lrint(
-                                        leftDecayT->autoDecaySeconds * 0.9 ),
+                            double tweakedSeconds =
+                                randSource.getRandomBoundedDouble(
+                                    leftDecayT->autoDecaySeconds * 0.9,
                                     leftDecayT->autoDecaySeconds );
+
+                            if( leftDecayT->autoDecaySeconds - tweakedSeconds > 5.0 )
+                                tweakedSeconds = leftDecayT->autoDecaySeconds - 5.0;
                            
-                            if( tweakedSeconds < 1 ) {
-                                tweakedSeconds = 1;
-                                }
                             leftMapETA = MAP_TIMESEC + tweakedSeconds;
                             }
                         else {
                             // no further decay
                             leftMapETA = 0;
                             }
-						//for movement from posA to posB, we want posA to be potentially always live tracked as well
-						//leftDecayT is passed to check if it should be always live tracked
+                        //for movement from posA to posB, we want posA to be potentially always live tracked as well
+                        //leftDecayT is passed to check if it should be always live tracked
                         setEtaDecay( inX, inY, leftMapETA, leftDecayT );
                         }
                     else {
@@ -5861,7 +5862,6 @@ int checkDecayObject( int inX, int inY, int inID ) {
                                                etaTime,
                                                moveTime };
                     
-                   
                     liveMovementEtaTimes.insert( newX, newY, 0, 0, etaTime );
                     
                     liveMovements.insert( moveRec, etaTime );
@@ -5998,14 +5998,14 @@ int checkDecayObject( int inX, int inY, int inID ) {
  
                 // add some random variation to avoid lock-step
                 // especially after a server restart
-                int tweakedSeconds =
-                    randSource.getRandomBoundedInt(
-                        lrint( newDecayT->autoDecaySeconds * 0.9 ),
+                double tweakedSeconds =
+                    randSource.getRandomBoundedDouble(
+                        newDecayT->autoDecaySeconds * 0.9,
                         newDecayT->autoDecaySeconds );
+
+                if( newDecayT->autoDecaySeconds - tweakedSeconds > 5.0 )
+                    tweakedSeconds = newDecayT->autoDecaySeconds - 5.0;
                
-                if( tweakedSeconds < 1 ) {
-                    tweakedSeconds = 1;
-                    }
                 mapETA = MAP_TIMESEC + tweakedSeconds;
                 }
             else {
@@ -6053,12 +6053,9 @@ int checkDecayObject( int inX, int inY, int inID ) {
        
         // randomize it so that every same object on map
         // doesn't cycle at same time
-        int decayTime =
-            randSource.getRandomBoundedInt( t->autoDecaySeconds / 2 ,
-                                            t->autoDecaySeconds );
-        if( decayTime < 1 ) {
-            decayTime = 1;
-            }
+        double decayTime =
+            randSource.getRandomBoundedDouble( t->autoDecaySeconds / 2 ,
+                                               t->autoDecaySeconds );
        
         mapETA = MAP_TIMESEC + decayTime;
            
@@ -6150,7 +6147,7 @@ void checkDecayContained( int inX, int inY, int inSubCont ) {
    
         if( mapETA != 0 ) {
        
-            if( (int)mapETA <= MAP_TIMESEC ) {
+            if( mapETA <= MAP_TIMESEC ) {
            
                 // object in container slot has decayed (eta expired)
                
@@ -6169,14 +6166,14 @@ void checkDecayContained( int inX, int inY, int inSubCont ) {
                        
                         // add some random variation to avoid lock-step
                         // especially after a server restart
-                        int tweakedSeconds =
-                            randSource.getRandomBoundedInt(
-                                lrint( newDecayT->autoDecaySeconds * 0.9 ),
+                        double tweakedSeconds =
+                            randSource.getRandomBoundedDouble(
+                                newDecayT->autoDecaySeconds * 0.9,
                                 newDecayT->autoDecaySeconds );
+
+                        if( newDecayT->autoDecaySeconds - tweakedSeconds > 5.0 )
+                            tweakedSeconds = newDecayT->autoDecaySeconds - 5.0;
  
-                        if( tweakedSeconds < 1 ) {
-                            tweakedSeconds = 1;
-                            }
                        
                         mapETA =
                             MAP_TIMESEC +
@@ -6193,89 +6190,32 @@ void checkDecayContained( int inX, int inY, int inSubCont ) {
                 
                     // Check for containment transitions - checkDecayContained
                     
-                    int inOrout = -1;
-                    
                     TransRecord *contTrans = NULL;
-                    
-                    // in-transitions
-                    if( i == 0 ) {
-                        contTrans = getPTrans( newID, containerID, false, false, 1 );
-                        if( contTrans == NULL ) contTrans = getPTrans( 0, containerID, false, false, 1 );
-                    } else if( i == numSlots - 1 ) {
-                        contTrans = getPTrans( newID, containerID, false, false, 2 );
-                        if( contTrans == NULL ) contTrans = getPTrans( 0, containerID, false, false, 2 );
-                    }
-                    
-                    if( contTrans == NULL ) {
-                        contTrans = getPTrans( newID, containerID, false, false, 3 );
-                        if( contTrans == NULL ) contTrans = getPTrans( 0, containerID, false, false, 3 );
-                    }
-                    
-                    if( contTrans == NULL ) {
-                        contTrans = getPTrans( newID, containerID, false, false, 4 );
-                        if( contTrans == NULL ) contTrans = getPTrans( 0, containerID, false, false, 4 );
-                    }
-                    
-                    if( contTrans != NULL ) {
-                        
-                        // Check that the new container can contain all the objects
-                        
-                        int slotNumber = numContained - 1;
-                        
-                        if( i == slotNumber ) slotNumber--;
-                        
-                        int contID = getContained( 
-                            inX, inY,
-                            slotNumber );
-                            
-                        if( contID < 0 ) contID *= -1;
 
-                    
-                        while( slotNumber >= 0 &&
-                               containmentPermitted( contTrans->newTarget, contID ) )  {
-                    
-                            slotNumber--;
-                            
-                            if( i == slotNumber ) slotNumber--;
-                            
-                            if( slotNumber < 0 ) break;
-                            
-                            contID = getContained( 
-                                inX, inY,
-                                slotNumber );
-                        
-                            if( contID < 0 ) {
-                                contID *= -1;
-                            }
-                        }
-                            
-                        if( slotNumber >= 0 ) {
-                            contTrans = NULL;
-                        }
-                        
-                    }
-                    
-                    if( contTrans != NULL ) inOrout = 0;
-                    
-                    // out-transitions
-                    if( contTrans == NULL ) {
-                        if( i == 0 ) {
-                            contTrans = getPTrans( containerID, oldID, false, false, 2 );
-                            if( contTrans == NULL ) contTrans = getPTrans( containerID, -1, false, false, 2 );
-                        } else if( i == numSlots - 1 ) {
-                            contTrans = getPTrans( containerID, oldID, false, false, 1 );
-                            if( contTrans == NULL ) contTrans = getPTrans( containerID, -1, false, false, 1 );
-                        }
+                    int newContainer = containerID;
+
+                    // Check for out-transitions first, then in-transitions
+                    // Think of the decay transition of the contained object as
+                    // taking out the old object (which may change the container)
+                    // and then putting the new object in the potentially new container
+
+                    // Check for containment transitions - checkDecayContained - out-transitions
+                    if( i == 0 ) {
+                        contTrans = getPTrans( newContainer, oldID, false, false, 2 );
+                        if( contTrans == NULL ) contTrans = getPTrans( newContainer, -1, false, false, 2 );
+                    } else if( i == numSlots - 1 ) {
+                        contTrans = getPTrans( newContainer, oldID, false, false, 1 );
+                        if( contTrans == NULL ) contTrans = getPTrans( newContainer, -1, false, false, 1 );
                     }
                     
                     if( contTrans == NULL ) {
-                        contTrans = getPTrans( containerID, oldID, false, false, 3 );
-                        if( contTrans == NULL ) contTrans = getPTrans( containerID, -1, false, false, 3 );
+                        contTrans = getPTrans( newContainer, oldID, false, false, 3 );
+                        if( contTrans == NULL ) contTrans = getPTrans( newContainer, -1, false, false, 3 );
                     }
                     
                     if( contTrans == NULL ) {
-                        contTrans = getPTrans( containerID, oldID, false, false, 4 );
-                        if( contTrans == NULL ) contTrans = getPTrans( containerID, -1, false, false, 4 );
+                        contTrans = getPTrans( newContainer, oldID, false, false, 4 );
+                        if( contTrans == NULL ) contTrans = getPTrans( newContainer, -1, false, false, 4 );
                     }
                     
                     
@@ -6317,30 +6257,106 @@ void checkDecayContained( int inX, int inY, int inSubCont ) {
                         }
                         
                     }
-                    
-                    
-                    if( contTrans != NULL && inOrout == -1 ) inOrout = 1;
-                    
+
                     if( contTrans != NULL ) {
                         
-                        // Execute containment transitions - checkDecayContained
-                        
-                        int newContainer = 0;
+                        // Execute containment transitions - checkDecayContained - out-transitions
+
                         // Don't change the newID here to simplify things...
                         // So the containment transition only applies to the container
                         // Otherwise what about the next step
                         // to check for transition between newID and the container?
-                        if( inOrout == 0 ) {
-                            newContainer = contTrans->newTarget;
-                            // newID = contTrans->newActor;
-                        } else if( inOrout == 1 ) {
-                            newContainer = contTrans->newActor;
-                            // newID = contTrans->newTarget;
+
+                        newContainer = contTrans->newActor;
+                        // newID = contTrans->newTarget;
+
+                        // Check for 1-second decay of the newContainer
+                        TransRecord *instantDecay = getPTrans( -1, newContainer );
+                        if( instantDecay != NULL && instantDecay->autoDecaySeconds == 1 ) newContainer = instantDecay->newTarget;
+                        
+                        if( newContainer != containerID ) {
+                            ObjectRecord *newC = getObject( newContainer );
+                            if( newC != NULL ) numSlots = newC->numSlots;
+                        }
+
+                    }
+
+                    contTrans = NULL;
+                    
+                    // Check for containment transitions - checkDecayContained - in-transitions
+                    if( i == 0 ) {
+                        contTrans = getPTrans( newID, newContainer, false, false, 1 );
+                        if( contTrans == NULL ) contTrans = getPTrans( 0, newContainer, false, false, 1 );
+                    } else if( i == numSlots - 1 ) {
+                        contTrans = getPTrans( newID, newContainer, false, false, 2 );
+                        if( contTrans == NULL ) contTrans = getPTrans( 0, newContainer, false, false, 2 );
+                    }
+                    
+                    if( contTrans == NULL ) {
+                        contTrans = getPTrans( newID, newContainer, false, false, 3 );
+                        if( contTrans == NULL ) contTrans = getPTrans( 0, newContainer, false, false, 3 );
+                    }
+                    
+                    if( contTrans == NULL ) {
+                        contTrans = getPTrans( newID, newContainer, false, false, 4 );
+                        if( contTrans == NULL ) contTrans = getPTrans( 0, newContainer, false, false, 4 );
+                    }
+                    
+                    if( contTrans != NULL ) {
+                        
+                        // Check that the new container can contain all the objects
+                        
+                        int slotNumber = numContained - 1;
+                        
+                        if( i == slotNumber ) slotNumber--;
+                        
+                        int contID = getContained( 
+                            inX, inY,
+                            slotNumber );
+                            
+                        if( contID < 0 ) contID *= -1;
+
+                    
+                        while( slotNumber >= 0 &&
+                               containmentPermitted( contTrans->newTarget, contID ) )  {
+                    
+                            slotNumber--;
+                            
+                            if( i == slotNumber ) slotNumber--;
+                            
+                            if( slotNumber < 0 ) break;
+                            
+                            contID = getContained( 
+                                inX, inY,
+                                slotNumber );
+                        
+                            if( contID < 0 ) {
+                                contID *= -1;
+                            }
+                        }
+                            
+                        if( slotNumber >= 0 ) {
+                            contTrans = NULL;
                         }
                         
-                        if( newContainer != containerID ) setMapObject( inX, inY, newContainer );
+                    }
+                    
+                    if( contTrans != NULL ) {
+                        
+                        // Execute containment transitions - checkDecayContained - in-transitions
+                        
+                        // Don't change the newID here to simplify things...
+                        // So the containment transition only applies to the container
+                        // Otherwise what about the next step
+                        // to check for transition between newID and the container?
+
+                        newContainer = contTrans->newTarget;
+                        // newID = contTrans->newActor;
                             
                     }
+
+                    if( newContainer != containerID ) setMapObject( inX, inY, newContainer );
+
                 }
 
                     
@@ -7053,73 +7069,14 @@ static int findGridPos( SimpleVector<GridPos> *inList, GridPos inP ) {
 
 
 
-static int applyTapoutGradientRotate( int inX, int inY,
-                                      int inTargetX, int inTargetY,
-                                      int inEastwardGradientID ) {
-    // apply result to itself to flip it 
-    // and point gradient in other direction
-                
-    // eastward + eastward = westward, etc
-
-    // order:  e, w, s, n, ne, se, sw, nw
-    
-    int numRepeat = 0;
-    
-    int curObjectID = inEastwardGradientID;                        
-
-    if( inX > inTargetX && inY == inTargetY ) {
-        numRepeat = 0;
-        }
-    else if( inX < inTargetX && inY == inTargetY ) {
-        numRepeat = 1;
-        }
-    else if( inX == inTargetX && inY < inTargetY ) {
-        numRepeat = 2;
-        }
-    else if( inX == inTargetX && inY > inTargetY ) {
-        numRepeat = 3;
-        }
-    else if( inX > inTargetX && inY > inTargetY ) {
-        numRepeat = 4;
-        }
-    else if( inX > inTargetX && inY < inTargetY ) {
-        numRepeat = 5;
-        }
-    else if( inX < inTargetX && inY < inTargetY ) {
-        numRepeat = 6;
-        }
-    else if( inX < inTargetX && inY > inTargetY ) {
-        numRepeat = 7;
-        }
-
-
-    
-    for( int i=0; i<numRepeat; i++ ) {
-        if( curObjectID == 0 ) {
-            break;
-            }
-        TransRecord *flipTrans = getPTrans( curObjectID, curObjectID );
-        
-        if( flipTrans != NULL ) {
-            curObjectID = flipTrans->newTarget;
-            }
-        }
-
-    if( curObjectID == 0 ) {
-        return -1;
-        }
-
-    return curObjectID;
-    }
-
-
-
 
 static void runTapoutOperation( int inX, int inY, 
                                 TapoutRecord *inR,
                                 int inTriggerID ) {
     
-    if( inR->gridSpacingX == -1 && inR->gridSpacingY == -1 ) {
+    if( inR->tapoutMode == 1 ) {
+
+        // tapout a specific tile
         
         int x = inX + inR->specificX;
         int y = inY + inR->specificY;
@@ -7135,133 +7092,257 @@ static void runTapoutOperation( int inX, int inY,
         
         }
     
-    // not a tapout on a specific tile
+    // not tapping out a specific tile
     
-    int inRadiusX = inR->limitX;
-    int inRadiusY = inR->limitY;
-    int inSpacingX = inR->gridSpacingX;
-    int inSpacingY = inR->gridSpacingY;
+    int inRadiusN = inR->radiusN;
+    int inRadiusE = inR->radiusE;
+    int inRadiusS = inR->radiusS;
+    int inRadiusW = inR->radiusW;
     
     int tapoutCount = 0;
     
     int totalGridCells = 0;
     int currentGridCellIndex = -1;
     
-    // counting total cells in the grid
-    for( int y =  inY - inRadiusY; 
-         y <= inY + inRadiusY; 
-         y += inSpacingY ) {
-    
-        for( int x =  inX - inRadiusX; 
-             x <= inX + inRadiusX; 
-             x += inSpacingX ) {
-            
-            if( inX == x && inY == y ) {
-                // skip center
-                continue;
+    if( inR->tapoutMode == 0 && inR->tapoutCountLimit != -1 ) {
+
+        // area tapout and there is a limit
+        // we will need to pick targets at random
+
+        // counting total cells in the grid
+
+        for( int y =  inY - inRadiusS; 
+            y <= inY + inRadiusN; 
+            y ++ ) {
+        
+            for( int x =  inX - inRadiusW; 
+                x <= inX + inRadiusE; 
+                x ++ ) {
+                
+                if( inX == x && inY == y ) {
+                    // skip center
+                    continue;
+                    }
+                
+                int id = getMapObjectRaw( x, y );
+                int id_floor = getMapFloor( x, y );
+                TransRecord *t = getPTrans( inTriggerID, id );
+                if( t != NULL && id == t->target ) totalGridCells++;
+                TransRecord *t_floor = getPTrans( inTriggerID, id_floor );
+                if( t_floor != NULL && id_floor == t_floor->target ) totalGridCells++;
                 }
-            
-            totalGridCells++;
             }
         }
     
+    if( inR->tapoutMode == 0 ) {
+
+        // main loop for area tapout
     
-    for( int y =  inY - inRadiusY; 
-         y <= inY + inRadiusY; 
-         y += inSpacingY ) {
-    
-        for( int x =  inX - inRadiusX; 
-             x <= inX + inRadiusX; 
-             x += inSpacingX ) {
-            
-            if( inX == x && inY == y ) {
-                // skip center
-                continue;
-                }
-            
-            currentGridCellIndex++;
-
-            int id = getMapObjectRaw( x, y );
-                    
-            // change triggered by tapout represented by 
-            // tapoutTrigger object getting used as actor
-            // on tapoutTarget
-            TransRecord *t = NULL;
-            
-            int newTarget = -1;
-            
-            
-            if( inR->tapoutCountLimit != -1 ) {
-                // this turns the loop into a totalGridCells draws inR->tapoutCountLimit
-                double P = (double)(inR->tapoutCountLimit - tapoutCount) / (totalGridCells - currentGridCellIndex);
+        for( int y =  inY - inRadiusS; 
+            y <= inY + inRadiusN; 
+            y ++ ) {
+        
+            for( int x =  inX - inRadiusW; 
+                x <= inX + inRadiusE; 
+                x ++ ) {
                 
-                double p = randSource.getRandomBoundedDouble( 0, 1 );
-                
-                if( p >= P ) continue;
-                }
-
-            if( true ) {
-                // last use target signifies what happens in 
-                // same row or column as inX, inY
-                
-                // get eastward
-                t = getPTrans( inTriggerID, id, false, true );
-
-                if( t != NULL ) {
-                    newTarget = t->newTarget;
+                if( inX == x && inY == y ) {
+                    // skip center
+                    continue;
                     }
-                
-                if( newTarget > 0 ) {
-                    newTarget = applyTapoutGradientRotate( inX, inY,
-                                                           x, y,
-                                                           newTarget );
-                    }
-                }
 
-            if( newTarget == -1 ) {
-                // not same row or post or last-use-target trans undefined
-                t = getPTrans( inTriggerID, id );
-                
-                if( t != NULL ) {
-                    newTarget = t->newTarget;
-                    }
-                }
+                for( int p=0; p<2; p++ ) {
 
-            if( newTarget != -1 ) {
-                tapoutCount++;
-                
-                setMapObjectRaw( x, y, newTarget );
-                
-                TransRecord *newDecayT = getMetaTrans( -1, newTarget );
-                
-                timeSec_t mapETA = 0;
-     
-                if( newDecayT != NULL ) {
-     
-                    // add some random variation to avoid lock-step
-                    // especially after a server restart
-                    int tweakedSeconds =
-                        randSource.getRandomBoundedInt(
-                            lrint( newDecayT->autoDecaySeconds * 0.9 ),
-                            newDecayT->autoDecaySeconds );
-                   
-                    if( tweakedSeconds < 1 ) {
-                        tweakedSeconds = 1;
+                    // tapout object in first pass
+                    // tapout floor in second pass
+
+                    int id;
+                    if( p == 0 ) {
+                        id = getMapObjectRaw( x, y );
                         }
-                    mapETA = MAP_TIMESEC + tweakedSeconds;
+                    else if( p == 1 ) {
+                        id = getMapFloor( x, y );
+                        }
+                            
+                    // change triggered by tapout represented by 
+                    // tapoutTrigger object getting used as actor
+                    // on tapoutTarget
+                    TransRecord *t = getPTrans( inTriggerID, id );
+
+                    if( t != NULL ) {
+
+                        currentGridCellIndex++;
+                        
+                        if( inR->tapoutCountLimit != -1 ) {
+                            // this turns the loop into a totalGridCells draws inR->tapoutCountLimit
+                            double P = (double)(inR->tapoutCountLimit - tapoutCount) / (totalGridCells - currentGridCellIndex);
+                            
+                            double p = randSource.getRandomBoundedDouble( 0, 1 );
+                            
+                            if( p >= P ) continue;
+                            }
+
+                        tapoutCount++;
+                        
+                        if( p == 0 ) {
+                            setMapObjectRaw( x, y, t->newTarget );
+                            }
+                        else if( p == 1 ) {
+                            setMapFloor( x, y, t->newTarget );
+                            }
+                        
+                        TransRecord *newDecayT = getMetaTrans( -1, t->newTarget );
+                        
+                        timeSec_t mapETA = 0;
+            
+                        if( newDecayT != NULL ) {
+            
+                            // add some random variation to avoid lock-step
+                            // especially after a server restart
+                            double tweakedSeconds =
+                                randSource.getRandomBoundedDouble(
+                                    newDecayT->autoDecaySeconds * 0.9,
+                                    newDecayT->autoDecaySeconds );
+
+                            if( newDecayT->autoDecaySeconds - tweakedSeconds > 5.0 )
+                                tweakedSeconds = newDecayT->autoDecaySeconds - 5.0;
+                        
+                            mapETA = MAP_TIMESEC + tweakedSeconds;
+                            }
+                        else {
+                            // no further decay
+                            mapETA = 0;
+                            }          
+            
+                        if( p == 0 ) {
+                            setEtaDecay( x, y, mapETA, newDecayT );
+                            }
+                        else if( p == 1 ) {
+                            setFloorEtaDecay( x, y, mapETA, newDecayT );
+                            }
+                        
+                        setEtaDecay( x, y, mapETA, newDecayT );
+
+                        }
+
+                    if( inR->tapoutCountLimit != -1 && tapoutCount >= inR->tapoutCountLimit ) {
+                        return;
+                        }
+
                     }
-                else {
-                    // no further decay
-                    mapETA = 0;
-                    }          
-     
-                setEtaDecay( x, y, mapETA, newDecayT );
+                    
                 }
-                
-            if( inR->tapoutCountLimit != -1 && tapoutCount >= inR->tapoutCountLimit ) {
-                return;
+            }
+        }
+    else if( inR->tapoutMode == 2 ) {
+
+        // directional tapout
+
+        // we tapout from inward to out; and N, E, S, W, in that order
+        // if there is a limit, tapout the closest ones (instead of random like area tapout)
+
+        int i = 1; // skip center
+        int maxRadius = 0;
+        if( maxRadius < inR->radiusN ) maxRadius = inR->radiusN;
+        if( maxRadius < inR->radiusE ) maxRadius = inR->radiusE;
+        if( maxRadius < inR->radiusS ) maxRadius = inR->radiusS;
+        if( maxRadius < inR->radiusW ) maxRadius = inR->radiusW;
+
+        while( i <= maxRadius ) {
+
+            for( int d = 0; d < 4; d++ ) {
+
+                int x, y;
+                if( d == 0 ) {
+                    if( i > inR->radiusN ) continue;
+                    x = inX+0; y = inY+i;
+                    }
+                else if( d == 1 ) {
+                    if( i > inR->radiusE ) continue;
+                    x = inX+i; y = inY+0;
+                    }
+                else if( d == 2 ) {
+                    if( i > inR->radiusS ) continue;
+                    x = inX+0; y = inY-i;
+                    }
+                else if( d == 3 ) {
+                    if( i > inR->radiusW ) continue;
+                    x = inX-i; y = inY+0;
+                    }
+
+                for( int p=0; p<2; p++ ) {
+
+                    // tapout object in first pass
+                    // tapout floor in second pass
+
+                    int id;
+                    if( p == 0 ) {
+                        id = getMapObjectRaw( x, y );
+                        }
+                    else if( p == 1 ) {
+                        id = getMapFloor( x, y );
+                        }
+                            
+                    // change triggered by tapout represented by 
+                    // tapoutTrigger object getting used as actor
+                    // on tapoutTarget
+                    TransRecord *t = getPTrans( inTriggerID, id );
+
+                    if( t != NULL ) {
+
+                        tapoutCount++;
+                        
+                        if( p == 0 ) {
+                            setMapObjectRaw( x, y, t->newTarget );
+                            }
+                        else if( p == 1 ) {
+                            setMapFloor( x, y, t->newTarget );
+                            }
+                        
+                        TransRecord *newDecayT = getMetaTrans( -1, t->newTarget );
+                        
+                        timeSec_t mapETA = 0;
+            
+                        if( newDecayT != NULL ) {
+            
+                            // add some random variation to avoid lock-step
+                            // especially after a server restart
+                            double tweakedSeconds =
+                                randSource.getRandomBoundedDouble(
+                                    newDecayT->autoDecaySeconds * 0.9,
+                                    newDecayT->autoDecaySeconds );
+
+                            if( newDecayT->autoDecaySeconds - tweakedSeconds > 5.0 )
+                                tweakedSeconds = newDecayT->autoDecaySeconds - 5.0;
+                        
+                            mapETA = MAP_TIMESEC + tweakedSeconds;
+                            }
+                        else {
+                            // no further decay
+                            mapETA = 0;
+                            }          
+            
+                        if( p == 0 ) {
+                            setEtaDecay( x, y, mapETA, newDecayT );
+                            }
+                        else if( p == 1 ) {
+                            setFloorEtaDecay( x, y, mapETA, newDecayT );
+                            }
+                        
+                        setEtaDecay( x, y, mapETA, newDecayT );
+
+                        }
+
+                    if( inR->tapoutCountLimit != -1 && tapoutCount >= inR->tapoutCountLimit ) {
+                        return;
+                        }
+
+                    }
+
                 }
-                
+
+            i++;
+
             }
         }
     
@@ -8271,12 +8352,44 @@ void setMapFloor( int inX, int inY, int inID ) {
         }
  
     setFloorEtaDecay( inX, inY, newEta );
+
+    ObjectRecord *o = getObject( inID );
+
+    if( o->isTapOutTrigger ) {
+        if( currentResponsiblePlayer != -1 ) {
+            int pID = currentResponsiblePlayer;
+            if( pID < 0 ) {
+                pID = -pID;
+                }
+            }
+        
+        // don't make current player responsible for all these changes
+        int restoreResponsiblePlayer = currentResponsiblePlayer;
+        currentResponsiblePlayer = -1;        
+        
+        TapoutRecord *r = getTapoutRecord( inID );
+        
+        if( r != NULL ) {
+
+            runTapoutOperation( inX, inY, 
+                                r,
+                                inID );
+            
+            }
+        
+        currentResponsiblePlayer = restoreResponsiblePlayer;
+        }
+
     }
  
  
  
-void setFloorEtaDecay( int inX, int inY, timeSec_t inAbsoluteTimeInSeconds ) {
+void setFloorEtaDecay( int inX, int inY, timeSec_t inAbsoluteTimeInSeconds,
+                       TransRecord *inApplicableTrans ) {
     dbFloorTimePut( inX, inY, inAbsoluteTimeInSeconds );
+    if( inAbsoluteTimeInSeconds != 0 ) {
+        trackETA( inX, inY, 0, inAbsoluteTimeInSeconds, 0, inApplicableTrans );
+        }
     }
  
  
@@ -8288,7 +8401,7 @@ timeSec_t getFloorEtaDecay( int inX, int inY ) {
  
  
  
-int getNextDecayDelta() {
+double getNextDecayDelta() {
     if( liveDecayQueue.size() == 0 ) {
         return -1;
         }
@@ -8422,6 +8535,10 @@ void stepMap( SimpleVector<MapChangeRecord> *inMapChanges,
             // this call will append changes to our global lists, which
             // we process below
             checkDecayObject( r.x, r.y, oldID );
+
+
+            // check floor decay as well
+            getMapFloor( r.x, r.y );
             }
         else {
             if( ! getSlotItemsNoDecay( r.x, r.y, r.subCont ) ) {
@@ -9749,4 +9866,44 @@ void stepMapLongTermCulling( int inNumCurrentPlayers ) {
                 }
             }
         }
+    }
+
+
+int getDeadlyMovingMapObject( int inPosX, int inPosY,
+                              int *outMovingDestX, int *outMovingDestY ) {
+    
+    double curTime = Time::getCurrentTime();
+    
+    int numMoving = liveMovements.size();
+    
+    for( int i=0; i<numMoving; i++ ) {
+        MovementRecord *m = liveMovements.getElement( i );
+        
+        if( ! m->deadly ) {
+            continue;
+            }
+        double progress = 
+            ( m->totalTime - ( m->etaTime - curTime )  )
+            / m->totalTime;
+        
+        if( progress < 0 ||
+            progress > 1 ) {
+            continue;
+            }
+        int curPosX = lrint( ( m->x - m->sourceX ) * progress + m->sourceX );
+        int curPosY = lrint( ( m->y - m->sourceY ) * progress + m->sourceY );
+        
+        if( curPosX != inPosX ||
+            curPosY != inPosY ) {
+            continue;
+            }
+        
+        // hit position
+        *outMovingDestX = m->x;
+        *outMovingDestY = m->y;
+        return m->id;
+        }
+    
+
+    return 0;
     }
