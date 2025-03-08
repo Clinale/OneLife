@@ -89,7 +89,6 @@ void Picker::redoSearch( char inClearPageSkip ) {
     
     
     char *search = mSearchField.getText();
-    
     if( mResults != NULL ) {
         delete [] mResults;
         delete [] mResultsUnclickable;
@@ -158,7 +157,6 @@ void Picker::redoSearch( char inClearPageSkip ) {
             multiTermDone = true;
             
             // do full search for first term
-            
             int numMainResults, numMainRemain;
             void **mainResults = 
                 mPickable->search( validTerms.getElementDirect( 0 ),
@@ -166,7 +164,7 @@ void Picker::redoSearch( char inClearPageSkip ) {
                                    // limit of 1 million
                                    1000000,
                                    &numMainResults, &numMainRemain );
-            if( numMainResults == 0 ) {
+            if( numMainResults == 0 ) {               
                 mResults = mainResults;
                 mNumResults = numMainResults;
                 numRemain = numMainRemain;
@@ -465,7 +463,19 @@ void Picker::setIgnoredKey( unsigned char inASCII ) {
     
     }
 
-
+// 计算UTF-8字符的字节长度
+int utf8_char_length(unsigned char first_byte) {
+    if ((first_byte & 0x80) == 0) {
+        return 1;
+    } else if ((first_byte & 0xE0) == 0xC0) {
+        return 2;
+    } else if ((first_byte & 0xF0) == 0xE0) {
+        return 3;
+    } else if ((first_byte & 0xF8) == 0xF0) {
+        return 4;
+    }
+    return 0;
+}
 
 
 void Picker::draw() {
@@ -502,15 +512,17 @@ void Picker::draw() {
             int textLen = strlen( text );
             
             int charsLeft = textLen;
-            
+            int startIndex, endIndex;
             SimpleVector<char*> parts;
-            
             while( charsLeft > 0 ) {
+                startIndex = textLen - charsLeft;
+                endIndex = startIndex + 9;
+                while (utf8_char_length(text[endIndex+1]) == 0 ) { // 寻找utf8字符末尾
+                    endIndex -= 1;
+                }
                 char *part =
-                    autoSprintf( "%.9s", &( text[ textLen - charsLeft ] ) );
+                    autoSprintf( "%.*s", endIndex - startIndex + 1, &( text[ startIndex ] ) ); // 确保最多只复制 9 个字符,需要根据unicode特性来切分
                 charsLeft -= strlen( part );
-                
-                
                 parts.push_back( part );
                 }
             
@@ -520,7 +532,6 @@ void Picker::draw() {
                 
                 char *text = parts.getElementDirect( j );
                 char *trimmed = trimWhitespace( text );
-                
                 smallFont->drawString( trimmed, 
                                        textPos, alignLeft );
                 textPos.y -= 12;
