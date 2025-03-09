@@ -1078,7 +1078,7 @@ void SettingsPage::draw( doublePair inViewCenter,
         pos.x -= 30;
         pos.y -= 2;
 
-        drawTextWithShadow( "ENABLE NUDITY", pos, alignRight );
+        drawTextWithShadow( translate("enableNudity"), pos, alignRight );
         }
     if( mUISizeSlider.isVisible() ) {
         doublePair pos = mEnableNudeBox.getPosition();
@@ -1225,42 +1225,42 @@ void SettingsPage::draw( doublePair inViewCenter,
         pos.x -= 30;
         pos.y -= 2;
 
-        drawTextWithShadow("SHOW COORDINATES", pos, alignRight);
+        drawTextWithShadow(translate("showCoordinates"), pos, alignRight);
         }
     if (mEnablePersistentEmoteBox.isVisible()) {
         doublePair pos = mEnablePersistentEmoteBox.getPosition();
         pos.x -= 30;
         pos.y -= 2;
 
-        drawTextWithShadow("USE PERMANENT EMOTE", pos, alignRight);
+        drawTextWithShadow( translate("usePermanentEmote"), pos, alignRight);
         }
     if (mEnableYumFinderBox.isVisible()) {
         doublePair pos = mEnableYumFinderBox.getPosition();
         pos.x -= 30;
         pos.y -= 2;
 
-        drawTextWithShadow("ENABLE YUM FINDER", pos, alignRight);
+        drawTextWithShadow( translate("enableYumFinder"), pos, alignRight);
         }
     if (mEnableObjectSearchBox.isVisible()) {
         doublePair pos = mEnableObjectSearchBox.getPosition();
         pos.x -= 30;
         pos.y -= 2;
 
-        drawTextWithShadow("ENABLE OBJECT FINDER", pos, alignRight);
+        drawTextWithShadow( translate("enableObjectFinder"), pos, alignRight);
         }
     if (mEnableFamilyDisplayBox.isVisible()) {
         doublePair pos = mEnableFamilyDisplayBox.getPosition();
         pos.x -= 30;
         pos.y -= 2;
 
-        drawTextWithShadow("ENABLE FAMILY DISPLAY", pos, alignRight);
+        drawTextWithShadow( translate("enableFamilyDisplay"), pos, alignRight);
         }
     if (mEnableDangerousTileBox.isVisible()) {
         doublePair pos = mEnableDangerousTileBox.getPosition();
         pos.x -= 30;
         pos.y -= 2;
 
-        drawTextWithShadow("ENABLE DANGER HIGHLIGHT", pos, alignRight);
+        drawTextWithShadow( translate("enableDangerHighLight"), pos, alignRight);
         }
     if( mGenerateTownPlannerMapsBox.isVisible() ) {
         doublePair pos = mGenerateTownPlannerMapsBox.getPosition();
@@ -1268,21 +1268,21 @@ void SettingsPage::draw( doublePair inViewCenter,
         pos.x -= 30;
         pos.y -= 2;
 
-        drawTextWithShadow( "SAVE MAP FILES", pos, alignRight );
+        drawTextWithShadow( translate("saveMapFiles"), pos, alignRight );
         }
     if (mEnableShowingHeldFoodPips.isVisible()) {
         doublePair pos = mEnableShowingHeldFoodPips.getPosition();
         pos.x -= 30;
         pos.y -= 2;
 
-        drawTextWithShadow("SHOW HELD FOOD PIPS", pos, alignRight);
+        drawTextWithShadow( translate("showHeldFoodPips"), pos, alignRight);
         }
     if (mEnableAlwaysShowPlayerLabelsBox.isVisible()) {
         doublePair pos = mEnableAlwaysShowPlayerLabelsBox.getPosition();
         pos.x -= 30;
         pos.y -= 2;
 
-        drawTextWithShadow("ALWAYS SHOW NAMES", pos, alignRight);
+        drawTextWithShadow( translate("alwaysShowNames"), pos, alignRight);
         }
     }
 
