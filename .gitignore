@@ -11,7 +11,7 @@ callgrind.out*
 leak.out*
 core*
 
-gameSource/OneLife.exe
+gameSource/*.exe
 gameSource/OneLife
 gameSource/testUser/*
 gameSource/testUser2/*
