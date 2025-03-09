@@ -1214,7 +1214,7 @@ static void drawPauseScreen() {
         doublePair quitButtonPos = { 460*gui_fov_scale, -272*gui_fov_scale };
 
         doublePair nextPageButtonPos = { 300*gui_fov_scale, -272*gui_fov_scale };
-        doublePair prevPageButtonPos = { 200*gui_fov_scale, -272*gui_fov_scale };
+        doublePair prevPageButtonPos = { 150*gui_fov_scale, -272*gui_fov_scale };
         
 
         if( 1 ) { // Resume button
@@ -1223,7 +1223,7 @@ static void drawPauseScreen() {
                 lastScreenViewCenter.y + resumeButtonPos.y
                 };
                 
-            char *buttonText = (char*)"[RESUME GAME]";
+            char *buttonText = (char*)"[返回游戏]";
             
             int subSize = handwritingFont->measureString( buttonText );
                 
@@ -1246,7 +1246,7 @@ static void drawPauseScreen() {
                 lastScreenViewCenter.y + settingsButtonPos.y
                 };
                 
-            char *buttonText = (char*)"[SETTINGS]";
+            char *buttonText = (char*)"[设置]";
             
             int subSize = handwritingFont->measureString( buttonText );
                 
@@ -1269,7 +1269,7 @@ static void drawPauseScreen() {
                 lastScreenViewCenter.y + quitButtonPos.y
                 };
                 
-            char *buttonText = (char*)"[QUIT GAME]";
+            char *buttonText = (char*)"[退出游戏]";
             
             int subSize = handwritingFont->measureString( buttonText );
                 
@@ -1296,7 +1296,7 @@ static void drawPauseScreen() {
                 lastScreenViewCenter.y + nextPageButtonPos.y
                 };
                 
-            char *buttonText = (char*)"[NEXT]";
+            char *buttonText = (char*)"[下一页]";
             
             int subSize = handwritingFont->measureString( buttonText );
                 
@@ -1319,7 +1319,7 @@ static void drawPauseScreen() {
                 lastScreenViewCenter.y + prevPageButtonPos.y
                 };
                 
-            char *buttonText = (char*)"[PREV]";
+            char *buttonText = (char*)"[上一页]";
             
             int subSize = handwritingFont->measureString( buttonText );
                 
