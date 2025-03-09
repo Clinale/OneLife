@@ -1,7 +1,7 @@
 
 warning$WARNING: MAKE A COPY OF THIS FILE BEFORE EDITING
 
-@COLUMN_W=510
+@COLUMN_W=650
 @COLUMN_H=600
 @COLUMN_O=-50
 
@@ -9,7 +9,7 @@ warning$WARNING: MAKE A COPY OF THIS FILE BEFORE EDITING
 @START_Y=20
 
 @LINEHEIGHT=35
-@NUMOFSHEETS=5
+@NUMOFSHEETS=6
 @SHEETSPERPAGE=2
 
 #sheet1
@@ -20,8 +20,9 @@ sub$I AM XXX$给自己起名.$
 sub$YOU ARE XXX$给孩子命名.$
 sub$NO BB$让我绝育.$
 sub$YES BB$让我能够生育.$
-sub$PASSWORD IS XXX$输入密码打开密码门$
-space$0.75f
+sub$PASSWORD IS XXX$
+输入密码打开密码门
+space$1.00f
 表情指令 加上/ 斜杠:
 space$0.25f
 sub$开心/HAPPY   大笑/JOY      惊叹/POG    心碎/BROKELOVE$
@@ -29,50 +30,57 @@ sub$邪恶/DEVIOUS 舞眉/HUBBA   不满/MAD    吐舌/TOUNGUE$
 sub$恢复/OREALLY 脸红/BLUSH    生病/ILL    祈求/PLEASE$
 sub$愤怒/ANGRY   口哨/YOOHOO 爱/LOVE   惊/SHOCK 苦/SAD$
 sub$小丑/CLOWN   白眼/EYEROLL 嗯/HMPH   呃/ERM  哭/CRY$
-space$0.75f
-SAVE COMMANDS OR SPEECH AS SHORTCUTS
-IN SETTINGS PAGE. USE NUMBER KEYS TO
-ACCESS THEM. OR USE ALT + NUMBER KEYS
-TO SWITCH BETWEEN COMMANDS WHEN IN
-TEXT BOX.
+
 #sheet2
 title$$
 其他指令:
 space$0.4f
 sub$/DIE$飞升$
-sub$/MARK [X] [Y] [NAME]$TO SAVE COORDINATES (ENABLE IN SETTINGS)$
-sub$/FIND [QUERY]$TO FIND ITEMS BY NAME (ENABLE IN SETTINGS)$
+sub$/MARK [X] [Y] [NAME]$保存坐标(设置)$
+sub$/FIND [QUERY]$通过名称寻找物品(设置)$
 sub$/FPS$显示/关闭 帧率$
 sub$/NET$显示/关闭 网络$
 sub$/PING$显示/关闭 时延$
 sub$/DISCONNECT$断开连接$
+space$0.75f
+
 #sheet3
-title$KEY BINDINGS - MOVEMENT, ACTION AND CAMERA$
-sub$WASD$MOVEMENT (WITH KEYBOARD ACTIONS ENABLED)$
-sub$SHIFT + WASD$USE / PICK UP ITEM$
-sub$CTRL + WASD$DROP ITEM / PICK UP ITEM FROM CONTAINER$
-sub$SPACE$USE / PICK UP ITEM ON CURRENT TILE$
-sub$E$EAT / PUT CLOTHES ON$
-sub$Q$USE BACKPACK$
-sub$T / SHIFT + T$USE TROUSERS / APRON POCKET$
-sub$C$PICK UP BABY$
-sub$F$FIX CAMERA POSITION$
-sub$NUM [1-9]$USE SAVED COMMANDS CONFIGURED IN SETTINGS PAGE$
-sub$X$X RAY VISION$
+title$按键绑定 - 移动、动作和相机$
+sub$WASD$移动$
+sub$SHIFT + WASD$使用 / 捡起物品$
+sub$CTRL + WASD$放入 / 取出容器$
+sub$SPACE$使用 / 捡起当前格物品$
+sub$E$吃 / 穿衣$
+sub$Q$使用背包$
+sub$T / SHIFT + T$使用 裤子 / 围裙 口袋$
+sub$C$抱孩子$
+sub$F$固定相机位置$
+sub$NUM [1-9]$使用设置页面中配置的已保存命令$
+sub$X$透视$
+
 #sheet4
 pic$280$120
-#sheet5
-title$KEY BINDINGS - CRAFTING GUIDE$
-sub$V$MINIMIZE / MAXIMIZE CRAFTING GUIDE$
-sub$CTRL + V$SWITCH BETWEEN 'USE' AND 'MAKE' MODE$
-sub$TAB / SHIFT + TAB$PAGE THROUGH RESULTS$
-sub$CTRL + Z / CTRL + X$PREVIOUS / NEXT OBJECT$
 
-title$KEY BINDINGS - OTHERS$
-sub$Y$HOLD TO SHOW YUM (ENABLE IN SETTINGS)$
-sub$G$TOGGLE COORDINATES PANEL (ENABLE IN SETTINGS)$
-sub$P$TOGGLE FAMILY DISPLAY PANEL (ENABLE IN SETTINGS)$
-sub$J$TOGGLE OBJECT FINDER PANEL (ENABLE IN SETTINGS)$
-sub$=$TAKE SCREENSHOT AND SAVE TO SCREENSHOTS FOLDER$
-sub$F12$RESET EMOTE$
-sub$SHIFT + K$SHOW GRID LINES$
+#sheet5
+title$按键绑定 - 科技树$
+sub$V$收起 / 展开 科技树$
+sub$CTRL + V$在 使用 / 制作 之间切换$
+sub$TAB / SHIFT + TAB$翻页$
+sub$CTRL + Z / CTRL + X$前 / 后 一个物品$
+
+title$按键绑定 - 其它$
+sub$Y$寻找YUM物品(设置)$
+sub$G$切换坐标面板(设置)$
+sub$P$切换家庭显示面板(设置)$
+sub$J$切换物体查找器面板(设置)$
+sub$=$截图并保存至screenShots$
+sub$F12$重置表情$
+sub$SHIFT + K$显示坐标轴$
+
+#sheet6
+title$快捷指令
+在设置页面中将命令或短语
+保存为快捷方式
+使用数字键访问它们
+或者在文本框中使用 
+ALT + 数字键在命令之间切换
