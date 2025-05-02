@@ -8559,7 +8559,10 @@ int processLoggedInPlayer( char inAllowReconnect,
 
     // addRecentScore( newObject.email, inFitnessScore );
     
-
+    char *seed = "";
+    if (connection->spawnCode) {
+	    seed = connection->spawnCode;
+    }
     if( ! newObject.isTutorial )     
     logBirth( newObject.id,
               newObject.email,
@@ -8570,13 +8573,8 @@ int processLoggedInPlayer( char inAllowReconnect,
               newObject.xd,
               newObject.yd,
               players.size(),
-              newObject.parentChainLength );
-    char *seed;
-    if (connection->spawnCode == NULL) {
-	seed = "";
-    } else {
-	seed = connection->spawnCode;
-    }
+              newObject.parentChainLength, seed);
+    
     HostAddress* a = connection->sock->getRemoteHostAddress(); 
     AppLog::infoF( "New player %s connected as player %d (tutorial=%d, IP=%s, Seed=%s) (%d,%d)"
                    " (maxPlacementX=%d)",
@@ -16995,17 +16993,6 @@ int main() {
                     else if( m.type == USE ) {
 
                         int target = getMapObject( m.x, m.y );
-
-                        // Log for moderation
-                        AppLog::infoF( "modLog id:%d %d %d USE x:%d y:%d h:%d t:%d",
-                            nextPlayer->id,
-                            nextPlayer->birthPos.x,
-                            nextPlayer->birthPos.y,
-                            m.x,
-                            m.y,
-                            nextPlayer->holdingID,
-                            target
-                            );
                         
                         // send update even if action fails (to let them
                         // know that action is over)
@@ -18711,6 +18698,36 @@ int main() {
                                     }
                                 }
                             }
+                            // Log for moderation
+                        char *sh = "";
+                        char *st = "";
+                        char *sn = "";
+                        if (nextPlayer->holdingID > 0) {
+                            ObjectRecord* o = getObject(nextPlayer->holdingID);
+                            sh = o->description;
+                        }
+                        if (target > 0) {
+                            ObjectRecord* o = getObject(target);
+                            st = o->description;
+                        }
+                        if (newGroundObject > 0) {
+                            ObjectRecord* o = getObject(newGroundObject);
+                            sn = o->description;
+                        }
+                        AppLog::infoF( "modLog account:%s %d %d USE x:%d y:%d h:%s(%d) t:%s(%d) n:%s(%d)",
+                            nextPlayer->email,
+                            nextPlayer->birthPos.x,
+                            nextPlayer->birthPos.y,
+                            m.x,
+                            m.y,
+                            sh,
+                            nextPlayer->holdingID,
+                            st,
+                            target,
+                            sn,
+                            newGroundObject
+                            );
+
                         }
                     else if( m.type == BABY ) {
                         playerIndicesToSendUpdatesAbout.push_back( i );
@@ -18994,15 +19011,26 @@ int main() {
                                 
                             int targetClothingID = 0;
                             if( clothingSlot != NULL ) targetClothingID = ( *clothingSlot )->id;
-                            
+                            char* sh = "";
+                            char *st = "";
+                            if (nextPlayer->holdingID > 0) {
+                                ObjectRecord* o = getObject(nextPlayer->holdingID);
+                                sh = o->description;
+                            }
+                            if (targetClothingID > 0) {
+                                ObjectRecord* o = getObject(targetClothingID);
+                                st = o->description;
+                            }
                             // Log for moderation - cases other than this main one is not logged
-                            AppLog::infoF( "modLog id:%d %d %d SELF x:%d y:%d h:%d t:%d %d",
-                                nextPlayer->id,
+                            AppLog::infoF( "modLog account:%s %d %d SELF x:%d y:%d h:%s(%d) t:%s(%d) %d",
+                                nextPlayer->email,
                                 nextPlayer->birthPos.x,
                                 nextPlayer->birthPos.y,
                                 m.x,
                                 m.y,
+                                sh,
                                 nextPlayer->holdingID,
+                                st,
                                 targetClothingID,
                                 m.i
                                 );
@@ -19749,17 +19777,27 @@ int main() {
                             canDrop = false;
                             }
 
-                        // Log for moderation
-                        AppLog::infoF( "modLog id:%d %d %d DROP x:%d y:%d h:%d t:%d",
-                            nextPlayer->id,
+                        char *sh = "";
+                        char *st = "";
+                        if (nextPlayer->holdingID > 0) {
+                            ObjectRecord *o = getObject(nextPlayer->holdingID);
+                            sh = o->description;
+                        }
+                        if (target > 0) {
+                            ObjectRecord *o = getObject(target);
+                            st = o->description;
+                        }
+                        AppLog::infoF( "modLog account:%s %d %d DROP x:%d y:%d h:%s(%d) t:%s(%d)",
+                            nextPlayer->email,
                             nextPlayer->birthPos.x,
                             nextPlayer->birthPos.y,
                             m.x,
                             m.y,
+                            sh,
                             nextPlayer->holdingID,
+                            st,
                             target
                             );
-                        
                         
                         char accessBlocked = 
                             isAccessBlocked( nextPlayer, 
@@ -20147,14 +20185,27 @@ int main() {
                         
                         int target = getMapObject( m.x, m.y );
 
+                        char *sh = "";
+                        char *st = "";
+                        if (nextPlayer->holdingID > 0) {
+                            ObjectRecord *o = getObject(nextPlayer->holdingID);
+                            sh = o->description;
+                        }
+                        if (target > 0) {
+                            ObjectRecord *o = getObject(target);
+                            st = o->description;
+                        }
+
                         // Log for moderation
-                        AppLog::infoF( "modLog id:%d %d %d REMV x:%d y:%d h:%d t:%d",
+                        AppLog::infoF( "modLog id:%d %d %d REMV x:%d y:%d h:%s(%d) t:%s(%d)",
                             nextPlayer->id,
                             nextPlayer->birthPos.x,
                             nextPlayer->birthPos.y,
                             m.x,
                             m.y,
+                            sh,
                             nextPlayer->holdingID,
+                            st,
                             target
                             );
                         
