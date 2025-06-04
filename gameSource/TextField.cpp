@@ -179,7 +179,7 @@ void TextField::setText( const char *inText ) {
     mSelectionEnd = -1;
     mCursorPosition = 0;
     mTextLen = 0;
-    if (inText[0] == 0) {
+    if (inText == NULL || inText[0] == 0) {
         mText = new char[1];
         mText[0] = 0;
     } else {

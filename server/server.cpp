@@ -18714,7 +18714,8 @@ int main() {
                             ObjectRecord* o = getObject(newGroundObject);
                             sn = o->description;
                         }
-                        AppLog::infoF( "modLog account:%s %d %d USE x:%d y:%d h:%s(%d) t:%s(%d) n:%s(%d)",
+                        AppLog::infoF( "modLog id:%d account:%s %d %d USE x:%d y:%d h:%s(%d) t:%s(%d) n:%s(%d)",
+                            nextPlayer->id,
                             nextPlayer->email,
                             nextPlayer->birthPos.x,
                             nextPlayer->birthPos.y,
@@ -19022,7 +19023,8 @@ int main() {
                                 st = o->description;
                             }
                             // Log for moderation - cases other than this main one is not logged
-                            AppLog::infoF( "modLog account:%s %d %d SELF x:%d y:%d h:%s(%d) t:%s(%d) %d",
+                            AppLog::infoF( "modLog id:%d account:%s %d %d SELF x:%d y:%d h:%s(%d) t:%s(%d) %d",
+                                nextPlayer->id,
                                 nextPlayer->email,
                                 nextPlayer->birthPos.x,
                                 nextPlayer->birthPos.y,
@@ -19787,7 +19789,8 @@ int main() {
                             ObjectRecord *o = getObject(target);
                             st = o->description;
                         }
-                        AppLog::infoF( "modLog account:%s %d %d DROP x:%d y:%d h:%s(%d) t:%s(%d)",
+                        AppLog::infoF( "modLog id:%d account:%s %d %d DROP x:%d y:%d h:%s(%d) t:%s(%d)",
+                            nextPlayer->id,
                             nextPlayer->email,
                             nextPlayer->birthPos.x,
                             nextPlayer->birthPos.y,
@@ -20197,8 +20200,9 @@ int main() {
                         }
 
                         // Log for moderation
-                        AppLog::infoF( "modLog id:%d %d %d REMV x:%d y:%d h:%s(%d) t:%s(%d)",
+                        AppLog::infoF( "modLog id:%d account:%s %d %d REMV x:%d y:%d h:%s(%d) t:%s(%d)",
                             nextPlayer->id,
+                            nextPlayer->email,
                             nextPlayer->birthPos.x,
                             nextPlayer->birthPos.y,
                             m.x,
