@@ -9409,17 +9409,28 @@ char isInDir( GridPos inPos, GridPos inOtherPos, doublePair inDir ) {
     return false;
     }
 
+static inline char isBlockedPos(GridPos thisPos) {
+    int oID = getMapObject(thisPos.x, thisPos.y);
+    if (oID <= 0 || (! getObject( oID )->blocksWalking)) {
+        return false;
+    }
+    return true;
+}
+
 // 检查机场的四周八个方向是否有跑道
 char isValidLandingPos(GridPos destPos) {
     // 八个方向的偏移量（上、下、左、右、左上、右上、左下、右下）
     const int dx[8] = {0, 0, -1, 1, -1, 1, -1, 1};
     const int dy[8] = {-1, 1, 0, 0, -1, -1, 1, 1};
-    
+    GridPos thisPos;
     // 检查每个方向
     for (int dir = 0; dir < 8; dir++) {
         // 每个方向检查3个格子
-        int floor = getMapFloor( destPos.x + dx[dir], destPos.y + dy[dir]);
-        if( floor == 0 ) {
+        thisPos.x = destPos.x + dx[dir];
+        thisPos.y = destPos.y + dy[dir];
+        
+        int floor = getMapFloor(thisPos.x , thisPos.y);
+        if( floor == 0 || isBlockedPos(thisPos)) {
             continue; // no landing road
         }
         double speedMult = getObject( floor )->speedMult;
@@ -9429,9 +9440,11 @@ char isValidLandingPos(GridPos destPos) {
         // 跑道长度必须大于等于3
         char isSameRoad = true;
         for (int step = 2; step <= 3; step++) {
-            int thisFloor = getMapFloor( destPos.x + dx[dir] * step, destPos.y + dy[dir] * step);
+            thisPos.x = destPos.x + dx[dir] * step;
+            thisPos.y = destPos.y + dy[dir] * step;
+            int thisFloor = getMapFloor(thisPos.x , thisPos.y);
         
-            if( ! sameRoadClass( thisFloor, floor ) ) {
+            if( ! sameRoadClass( thisFloor, floor ) || isBlockedPos(thisPos)) {
                 // not same floor whole way
                 isSameRoad = false;
                 break;
