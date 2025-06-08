@@ -9408,8 +9408,41 @@ char isInDir( GridPos inPos, GridPos inOtherPos, doublePair inDir ) {
         }
     return false;
     }
- 
- 
+
+// 检查机场的四周八个方向是否有跑道
+char isValidLandingPos(GridPos destPos) {
+    // 八个方向的偏移量（上、下、左、右、左上、右上、左下、右下）
+    const int dx[8] = {0, 0, -1, 1, -1, 1, -1, 1};
+    const int dy[8] = {-1, 1, 0, 0, -1, -1, 1, 1};
+    
+    // 检查每个方向
+    for (int dir = 0; dir < 8; dir++) {
+        // 每个方向检查3个格子
+        int floor = getMapFloor( destPos.x + dx[dir], destPos.y + dy[dir]);
+        if( floor == 0 ) {
+            continue; // no landing road
+        }
+        double speedMult = getObject( floor )->speedMult;
+        if( speedMult < 1.4 ) {
+            continue; // 因为飞机起飞速度需要大于15，飞机加速比为3，基础速度为3.75,所以跑道加速比必须大于1.4
+        }
+        // 跑道长度必须大于等于3
+        char isSameRoad = true;
+        for (int step = 2; step <= 3; step++) {
+            int thisFloor = getMapFloor( destPos.x + dx[dir] * step, destPos.y + dy[dir] * step);
+        
+            if( ! sameRoadClass( thisFloor, floor ) ) {
+                // not same floor whole way
+                isSameRoad = false;
+                break;
+            }
+        }
+        if (isSameRoad) {
+            return true;
+        }
+    }
+    return false;
+} 
  
 GridPos getNextCloseLandingPos( GridPos inCurPos,
                                 doublePair inDir,
@@ -9444,7 +9477,10 @@ GridPos getNextCloseLandingPos( GridPos inCurPos,
                     persistentMapDBPut( thisPos.x, thisPos.y, 2, "\0" );
                     i--;
                     continue;
-                    }
+                }
+                if (! isValidLandingPos(thisPos)) {
+                    continue;
+                }
                 closestDist = dist;
                 closestPos = thisPos;
                 closestIndex = i;
@@ -9494,7 +9530,10 @@ GridPos getClosestLandingPos( GridPos inTargetPos, char *outFound ) {
                 persistentMapDBPut( thisPos.x, thisPos.y, 2, "\0" );
                 i--;
                 continue;
-                }
+            }
+            if (! isValidLandingPos(thisPos)) {
+                continue;
+            }
             closestDist = dist;
             closestPos = thisPos;
             closestIndex = i;
