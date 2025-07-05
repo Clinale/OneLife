@@ -15,7 +15,6 @@ ${SCREEN_GL_O}: ../../minorGems/graphics/openGL/ScreenGL_SDL.cpp \
  ../../minorGems/graphics/openGL/SingleTextureGL.h \
  ../../minorGems/graphics/openGL/glInclude.h \
  ../../minorGems/graphics/Image.h \
- ../../minorGems/graphics/Image.cpp \
  ../../minorGems/graphics/ChannelFilter.h \
  ../../minorGems/graphics/Color.h ../../minorGems/graphics/RGBAImage.h \
  ../../minorGems/graphics/Image.h \
@@ -36,7 +35,6 @@ ${SINGLE_TEXTURE_GL_O}: ../../minorGems/graphics/openGL/SingleTextureGL.cpp \
  ../../minorGems/graphics/openGL/SingleTextureGL.h \
  ../../minorGems/graphics/openGL/glInclude.h \
  ../../minorGems/graphics/Image.h \
- ../../minorGems/graphics/Image.cpp \
  ../../minorGems/graphics/ChannelFilter.h \
  ../../minorGems/graphics/Color.h ../../minorGems/io/Serializable.h \
  ../../minorGems/common.h \
@@ -282,7 +280,6 @@ ${GAME_SDL_O}: ../../minorGems/game/platforms/SDL/gameSDL.cpp \
  ../../minorGems/graphics/converters/LittleEndianImageConverter.h \
  ../../minorGems/graphics/ImageConverter.h \
  ../../minorGems/graphics/Image.h \
- ../../minorGems/graphics/Image.cpp \
  ../../minorGems/graphics/ChannelFilter.h \
  ../../minorGems/graphics/Color.h ../../minorGems/graphics/RawRGBAImage.h \
  ../../minorGems/util/ByteBufferInputStream.h \
@@ -318,7 +315,6 @@ ${GAME_GRAPHICS_GL_O}: \
  ../../minorGems/game/platforms/openGL/gameGraphicsGL.cpp \
  ../../minorGems/game/gameGraphics.h ../../minorGems/game/doublePair.h \
  ../../minorGems/graphics/Image.h \
- ../../minorGems/graphics/Image.cpp \
  ../../minorGems/graphics/ChannelFilter.h \
  ../../minorGems/graphics/Color.h ../../minorGems/io/Serializable.h \
  ../../minorGems/common.h \
@@ -339,7 +335,6 @@ ${SPRITE_GL_O}: ../../minorGems/game/platforms/openGL/SpriteGL.cpp \
  ../../minorGems/graphics/openGL/SingleTextureGL.h \
  ../../minorGems/graphics/openGL/glInclude.h \
  ../../minorGems/graphics/Image.h \
- ../../minorGems/graphics/Image.cpp \
  ../../minorGems/graphics/ChannelFilter.h \
  ../../minorGems/graphics/Color.h ../../minorGems/io/Serializable.h \
  ../../minorGems/common.h \
@@ -361,7 +356,6 @@ ${DOUBLE_PAIR_O}: ../../minorGems/game/doublePair.cpp \
 ${FONT_O}: ../../minorGems/game/Font.cpp ../../minorGems/game/Font.h \
  ../../minorGems/game/gameGraphics.h ../../minorGems/game/doublePair.h \
  ../../minorGems/graphics/Image.h \
- ../../minorGems/graphics/Image.cpp \
  ../../minorGems/graphics/ChannelFilter.h \
  ../../minorGems/graphics/Color.h ../../minorGems/io/Serializable.h \
  ../../minorGems/common.h \
@@ -396,7 +390,6 @@ ${DRAW_UTILS_O}: ../../minorGems/game/drawUtils.cpp \
  ../../minorGems/game/drawUtils.h ../../minorGems/game/doublePair.h \
  ../../minorGems/graphics/Color.h ../../minorGems/game/gameGraphics.h \
  ../../minorGems/game/doublePair.h ../../minorGems/graphics/Image.h \
- ../../minorGems/graphics/Image.cpp \
  ../../minorGems/graphics/ChannelFilter.h \
  ../../minorGems/graphics/Color.h ../../minorGems/io/Serializable.h \
  ../../minorGems/common.h \
@@ -446,7 +439,6 @@ ${DIFF_BUNDLE_CLIENT_O}: \
  ../../minorGems/game/diffBundle/client/diffBundleClient.h \
  ../../minorGems/game/game.h ../../minorGems/game/doublePair.h \
  ../../minorGems/graphics/Image.h \
- ../../minorGems/graphics/Image.cpp \
  ../../minorGems/graphics/ChannelFilter.h \
  ../../minorGems/graphics/Color.h ../../minorGems/io/Serializable.h \
  ../../minorGems/common.h \
@@ -488,7 +480,6 @@ PNGImageConverter.o: \
  ../../minorGems/graphics/converters/BigEndianImageConverter.h \
  ../../minorGems/graphics/ImageConverter.h \
  ../../minorGems/graphics/Image.h \
- ../../minorGems/graphics/Image.cpp \
  ../../minorGems/graphics/ChannelFilter.h \
  ../../minorGems/graphics/Color.h ../../minorGems/io/Serializable.h \
  ../../minorGems/common.h \
