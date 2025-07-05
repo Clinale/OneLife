@@ -337,4 +337,6 @@ int getDeadlyMovingMapObject( int inPosX, int inPosY,
 
 bool sameRoadClass( int inFloorA, int inFloorB );
 
+inline char isBlockedPos(GridPos thisPos);
+
 #endif

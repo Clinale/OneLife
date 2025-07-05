@@ -21844,10 +21844,28 @@ int main() {
                                             tr->newActor );
                                             
                                         // stick player next to landing
-                                        // pad
-                                        destPos.x --;
+                                        // pad 
+                                        // destPos.x --;
+                                        // 检查8个方向，选择一个空格
+                                        int dx[8] = {0, 0, -1, 1, -1, 1, -1, 1};
+                                        int dy[8] = {0, 1, 0, 0, -1, -1, 1, 1};
+                                        GridPos thisPos;
+                                        int dir;
+                                        // 检查每个方向
+                                        for (dir = 0; dir < 8; dir++) {
+                                            thisPos.x = destPos.x + dx[dir];
+                                            thisPos.y = destPos.y + dy[dir];
+                                            
+                                            if( ! isBlockedPos(thisPos)) {
+                                                destPos = thisPos;
+                                                break;
+                                            }
+                                        }
+                                        if (dir == 8) {
+                                            destPos.x --; // stick player next to landing pad
                                         }
                                     }
+                                }
                                 if( ! heldTransHappened ) {
                                     // crash landing
                                     // force decay of held
