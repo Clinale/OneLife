@@ -9409,7 +9409,7 @@ char isInDir( GridPos inPos, GridPos inOtherPos, doublePair inDir ) {
     return false;
     }
 
-inline char isBlockedPos(GridPos thisPos) {
+static inline char isBlockedPos(GridPos thisPos) {
     int oID = getMapObject(thisPos.x, thisPos.y);
     if (oID <= 0 || (! getObject( oID )->blocksWalking)) {
         return false;
@@ -9419,26 +9419,10 @@ inline char isBlockedPos(GridPos thisPos) {
 
 // 检查机场的四周八个方向是否有跑道
 char isValidLandingPos(GridPos destPos) {
-    return true; // no checking
     // 八个方向的偏移量（上、下、左、右、左上、右上、左下、右下）
     const int dx[8] = {0, 0, -1, 1, -1, 1, -1, 1};
     const int dy[8] = {-1, 1, 0, 0, -1, -1, 1, 1};
     GridPos thisPos;
-    // 检查是否封闭场地，如果为开放场地，直接返回
-    for (int dir = 0; dir < 8; dir ++) {
-        char isblocked = false;
-        for (int step = 1; step <= 3; step++) {
-            thisPos.x = destPos.x + dx[dir] * step;
-            thisPos.y = destPos.y + dy[dir] * step;
-            if (isBlockedPos(thisPos)) {
-                isblocked = true;
-                break;
-            }
-        }
-        if (! isblocked) { 
-            return true;
-        }
-    }
     // 检查每个方向
     for (int dir = 0; dir < 8; dir++) {
         // 每个方向检查3个格子
