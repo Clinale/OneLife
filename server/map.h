@@ -335,6 +335,4 @@ int getDeadlyMovingMapObject( int inPosX, int inPosY,
                               int *outMovingDestX, int *outMovingDestY );
 
 
-bool sameRoadClass( int inFloorA, int inFloorB );
-
 #endif
