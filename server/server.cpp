@@ -12763,14 +12763,15 @@ int constant_time_strcmp(const char *s1, const char *s2) {
     int areDifferent = 0;
     size_t len1 = strlen(s1);
     size_t len2 = strlen(s2);
+    // return 0 if equal, return 1 if not equal
+    if(len1 != len2)
+        return 1;
     size_t max_len = (len1 > len2) ? len1 : len2;
 
     for (i = 0; i < max_len; i++) {
         areDifferent |= s1[i % len1] ^ s2[i % len2];
         }
-    // return 0 if equal, return 1 if not equal
-    if(len1 != len2)
-        return 1;
+    
     if(areDifferent)
         return 1;
     return 0;

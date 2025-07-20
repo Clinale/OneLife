@@ -30,6 +30,7 @@ sub$邪恶/DEVIOUS 舞眉/HUBBA   不满/MAD    吐舌/TOUNGUE$
 sub$恢复/OREALLY 脸红/BLUSH    生病/ILL    祈求/PLEASE$
 sub$愤怒/ANGRY   口哨/YOOHOO 爱/LOVE   惊/SHOCK 苦/SAD$
 sub$小丑/CLOWN   白眼/EYEROLL 嗯/HMPH   呃/ERM  哭/CRY$
+sub$音乐/MUSIC   点赞/GOOD$
 
 #sheet2
 title$$
