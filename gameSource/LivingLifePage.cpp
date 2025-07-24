@@ -25061,7 +25061,7 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
         int id = mObjectPicker.getSelectedObject( &rightClick );
         if( isLastMouseButtonRight() ) {
             if( isShiftKeyDown() ) {
-                id = 16003; // Smooth Ground #floor
+                id = 30407; // shift + 右键 可以消除地板
                 }
             else {
                 id = 1938; // Smooth Ground
