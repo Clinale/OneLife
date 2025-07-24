@@ -795,6 +795,7 @@ char isNameDuplicateForCurses( const char *inPlayerName ) {
     for( int i=0; i<numRec; i++ ) {
         
         PlayerNameRecord *r = playerNames.getElement( i );
+        if (r == NULL || r->name == NULL) continue; // may crash, for safe
         
         if( strcmp( inPlayerName, r->name ) == 0 ) {
             return true;
