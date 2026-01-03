@@ -139,7 +139,7 @@ const char *findCloseName( char *inString, char *inNameList, int inListLen,
                            int *outIndex = NULL ) {
     if( inNameList == NULL ) {
         return defaultName;
-        }
+    }
     
     char *tempString = stringToUpperCase( inString );
     
@@ -335,7 +335,7 @@ const char *findCloseLastName( char *inString ) {
 
 
 int getFirstNameIndex( char *inFirstName ) {
-    int i;
+    int i=-1;
     findCloseName( inFirstName, firstNames, firstNamesLen, &i );
     
     return i;
@@ -343,7 +343,7 @@ int getFirstNameIndex( char *inFirstName ) {
 
 
 int getLastNameIndex( char *inLastName ) {
-    int i;
+    int i=-1;
     findCloseName( inLastName, lastNames, lastNamesLen, &i );
    
     return i;
@@ -352,27 +352,35 @@ int getLastNameIndex( char *inLastName ) {
 
 
 const char *getFirstName( int inIndex, int *outNextIndex ) {
+    if (inIndex == -1) {
+	*outNextIndex = -1;
+	return defaultName;
+    }
     *outNextIndex = getNameOffsetForward( firstNames, firstNamesLen, inIndex );
 
     if( inIndex == *outNextIndex ) {
         // loop back around
         *outNextIndex = 0;
-        }
+    }
     
     return &( firstNames[ inIndex ] );
-    }
+}
 
 
 
 const char *getLastName( int inIndex, int *outNextIndex ) {
+    if (inIndex == -1) {
+	    *outNextIndex = -1;
+	    return defaultName;
+    }
     *outNextIndex = getNameOffsetForward( lastNames, lastNamesLen, inIndex );
     
     if( inIndex == *outNextIndex ) {
         // loop back around
         *outNextIndex = 0;
-        }    
+    }    
 
     return &( lastNames[ inIndex ] );
-    }
+}
 
 

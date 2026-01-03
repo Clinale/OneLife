@@ -11123,7 +11123,7 @@ char *getUniqueCursableName( char *inPlayerName, char *outSuffixAdded,
     if( ! dup ) {
         *outSuffixAdded = false;
 
-        if( inIsEve ) {
+        if( false && inIsEve) { // never execute it
             // make sure Eve doesn't have same last name as any living person
             char firstName[99];
             char lastName[99];
@@ -11231,7 +11231,7 @@ char *getUniqueCursableName( char *inPlayerName, char *outSuffixAdded,
             
             int i = getFirstNameIndex( firstName );
 
-            while( dup ) {
+            while( i>=0 && dup ) {
 
                 int nextI;
                 
@@ -11239,19 +11239,19 @@ char *getUniqueCursableName( char *inPlayerName, char *outSuffixAdded,
             
                 if( dup ) {
                     i = nextI;
-                    }
                 }
+            }
             
             if( dup ) {
                 // ran out of names, yikes
                 return inPlayerName;
-                }
+            }
             else {
                 delete [] inPlayerName;
                 int nextI;
                 return stringDuplicate( getFirstName( i, &nextI ) );
-                }
             }
+        }
         else if( numNames == 2 ) {
             if( inIsEve ) {
                 // cycle last names until we find one not used by any
@@ -11261,7 +11261,7 @@ char *getUniqueCursableName( char *inPlayerName, char *outSuffixAdded,
             
                 const char *tempLastName = "";
                 
-                while( dup ) {
+                while( i>=0 && dup ) {
                     
                     int nextI;
                     tempLastName = getLastName( i, &nextI );
@@ -11282,28 +11282,28 @@ char *getUniqueCursableName( char *inPlayerName, char *outSuffixAdded,
                     
                     if( dup ) {
                         i = nextI;
-                        }
                     }
+                }
             
                 if( dup ) {
                     // ran out of names, yikes
                     return inPlayerName;
-                    }
+                }
                 else {
                     delete [] inPlayerName;
                     return autoSprintf( "%s %s", firstName, tempLastName );
-                    }
                 }
+            }
             else {
                 // cycle first names until we find one
                 int i = getFirstNameIndex( firstName );
             
                 char *tempName = NULL;
                 
-                while( dup ) {                    
+                while(i>=0 && dup ) {                    
                     if( tempName != NULL ) {
                         delete [] tempName;
-                        }
+                    }
                     
                     int nextI;
                     tempName = autoSprintf( "%s %s", getFirstName( i, &nextI ),
@@ -11313,29 +11313,29 @@ char *getUniqueCursableName( char *inPlayerName, char *outSuffixAdded,
                     dup = isNameDuplicateForCurses( tempName );
                     if( dup ) {
                         i = nextI;
-                        }
                     }
+                }
             
                 if( dup ) {
                     // ran out of names, yikes
                     if( tempName != NULL ) {
                         delete [] tempName;
-                        }
-                    return inPlayerName;
                     }
+                    return inPlayerName;
+                }
                 else {
                     delete [] inPlayerName;
                     return tempName;
-                    }
                 }
             }
+        }
         else {
             // weird case, name doesn't even have two string parts, give up
             return inPlayerName;
-            }
         }
-    
     }
+    
+}
 
 
 
@@ -16643,10 +16643,10 @@ int main() {
                             char *name = isFamilyNamingSay( m.saidText );
                             
                             if( name != NULL && strcmp( name, "" ) != 0 ) {
-                                const char *close = findCloseLastName( name );
+				// const char *close = findCloseLastName( name );
                                 nextPlayer->name = autoSprintf( "%s %s",
                                                                 eveName, 
-                                                                close );
+                                                                name );
 
                                 
                                 nextPlayer->name = getUniqueCursableName( 
